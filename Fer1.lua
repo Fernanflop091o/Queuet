@@ -1,5 +1,4 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/fernando6663535/Lua/main/To_Bills.Lua"))()
-          
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Fer4.lua"))()
 local function safeCall(func)
     local success, err = pcall(func)
     if not success then
@@ -146,9 +145,9 @@ local function executeScript()
                 game:GetService("ReplicatedStorage").Package.Events.ta:InvokeServer()
             end
             wait(.01)
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/PARA_AMIGOS-ASER-SCRITP/main/Fer3.lua"))()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Fer3.lua"))()
         else
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/PARA_AMIGOS-ASER-SCRITP/main/Fer3.lua"))()
+          loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Fer3.lua"))()
         end
     end)
 end
