@@ -25,12 +25,12 @@ end
 local function sendToDiscord(name, displayName, rebirthInfo)
     local formattedRebirth = formatNumber(rebirthInfo.PlayerRebirth)  -- Formatear rebirth con sufijos
     local data = {
-        ["content"] = "```\n" ..
-                      "Nombre del jugador: " .. name .. "\n" ..
-                      "Apodo del jugador: " .. displayName .. "\n" ..
-                      "Rebirth (Formateado): " .. formattedRebirth .. "\n" ..
-                      "Último Rebirth: " .. rebirthInfo.LastRebirthTime .. "\n" ..
-                      "```"
+        ["content"] = "```" .. 
+            "Nombre del jugador: " .. name .. "\n" ..
+            "Apodo del jugador: " .. displayName .. "\n" ..
+            "Rebirth (Formateado): " .. formattedRebirth .. "\n" ..
+            "Último Rebirth: " .. rebirthInfo.LastRebirthTime ..
+            "```"
     }
 
     local success, response = pcall(function()
@@ -77,7 +77,7 @@ folderData.Rebirth.Changed:Connect(function(newRebirthValue)
             LastRebirthTime = os.date("%Y-%m-%d %H:%M:%S"),
             PlayerRebirth = newRebirthValue
         }
-        sendToDiscord(player.Name, player.DisplayName, rebirthInfo)  -- Enviar al webhook con apodo y rebirth formateado en un cuadro
+        sendToDiscord(player.Name, player.DisplayName, rebirthInfo)  -- Enviar al webhook con apodo y rebirth formateado
         saveRebirthValue(newRebirthValue)  -- Actualizar el archivo con el nuevo valor
         rebirthValue = newRebirthValue  -- Actualizar el valor actual
     end
