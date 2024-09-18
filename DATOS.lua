@@ -2,28 +2,21 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local player = game.Players.LocalPlayer
 
--- URL del webhook de Discord
 local discordWebhookUrl = "https://discord.com/api/webhooks/1282137613330812989/vTfeh32ckz0NtllE6Cwiv77B1J9rKNoGoEgRSiSaZcXNLagK2FpI6yqKZpNtC_4OdQmH"
-
--- Ruta del archivo para guardar el valor de rebirths
 local FILE_PATH = "rebirth_data.json"
 
--- Función para formatear los números con sufijos (K, M, B, etc.)
 local function formatNumber(number)
     local suffixes = {"", "K", "M", "B", "T", "QD"}
     local suffix_index = 1
-
     while math.abs(number) >= 1000 and suffix_index < #suffixes do
         number = number / 1000.0
         suffix_index = suffix_index + 1
     end
-
     return string.format("%.2f%s", number, suffixes[suffix_index])
 end
 
--- Función para enviar datos al webhook de Discord
 local function sendToDiscord(name, displayName, rebirthInfo)
-    local formattedRebirth = formatNumber(rebirthInfo.PlayerRebirth)  -- Formatear rebirth con sufijos
+    local formattedRebirth = formatNumber(rebirthInfo.PlayerRebirth)
     local data = {
         ["content"] = "```" .. 
             "Nombre del jugador: " .. name .. "\n" ..
@@ -49,27 +42,41 @@ local function sendToDiscord(name, displayName, rebirthInfo)
     end
 end
 
--- Función para guardar el valor de rebirths en un archivo
 local function saveRebirthValue(rebirthValue)
     local rebirthInfo = {
         LastRebirthTime = os.date("%Y-%m-%d %H:%M:%S"),
         PlayerRebirth = rebirthValue
     }
     local jsonData = HttpService:JSONEncode(rebirthInfo)
-    writefile(FILE_PATH, jsonData)
+    local success, errorMessage = pcall(function()
+        writefile(FILE_PATH, jsonData)
+    end)
+    if not success then
+        warn("Error al guardar el valor de rebirths:", errorMessage)
+    end
 end
 
--- Función para cargar el valor de rebirths desde un archivo
 local function loadRebirthValue()
-    local jsonData = readfile(FILE_PATH)
-    local data = HttpService:JSONDecode(jsonData)
+    local success, jsonData = pcall(function()
+        return readfile(FILE_PATH)
+    end)
+    if not success then
+        warn("Error al cargar el valor de rebirths:", jsonData)
+        return nil
+    end
+    local data, decodeError = pcall(function()
+        return HttpService:JSONDecode(jsonData)
+    end)
+    if not data then
+        warn("Error al decodificar el valor de rebirths:", decodeError)
+        return nil
+    end
     return data
 end
 
--- Monitorizar cambios en el valor de rebirths
 local folderData = ReplicatedStorage:WaitForChild("Datas"):WaitForChild(player.UserId)
 local rebirthValue = folderData.Rebirth.Value
-saveRebirthValue(rebirthValue)  -- Guardar el valor inicial
+saveRebirthValue(rebirthValue)
 
 folderData.Rebirth.Changed:Connect(function(newRebirthValue)
     if newRebirthValue > rebirthValue then
@@ -77,8 +84,8 @@ folderData.Rebirth.Changed:Connect(function(newRebirthValue)
             LastRebirthTime = os.date("%Y-%m-%d %H:%M:%S"),
             PlayerRebirth = newRebirthValue
         }
-        sendToDiscord(player.Name, player.DisplayName, rebirthInfo)  -- Enviar al webhook con apodo y rebirth formateado
-        saveRebirthValue(newRebirthValue)  -- Actualizar el archivo con el nuevo valor
-        rebirthValue = newRebirthValue  -- Actualizar el valor actual
+        sendToDiscord(player.Name, player.DisplayName, rebirthInfo)
+        saveRebirthValue(newRebirthValue)
+        rebirthValue = newRebirthValue
     end
 end)
