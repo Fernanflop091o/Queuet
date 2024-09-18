@@ -8,10 +8,24 @@ local discordWebhookUrl = "https://discord.com/api/webhooks/1282137613330812989/
 -- Ruta del archivo para guardar el valor de rebirths
 local FILE_PATH = "rebirth_data.json"
 
+-- Función para formatear los números con sufijos (K, M, B, etc.)
+local function formatNumber(number)
+    local suffixes = {"", "K", "M", "B", "T", "QD"}
+    local suffix_index = 1
+
+    while math.abs(number) >= 1000 and suffix_index < #suffixes do
+        number = number / 1000.0
+        suffix_index = suffix_index + 1
+    end
+
+    return string.format("%.2f%s", number, suffixes[suffix_index])
+end
+
 -- Función para enviar datos al webhook de Discord
-local function sendToDiscord(name, rebirthInfo)
+local function sendToDiscord(name, displayName, rebirthInfo)
+    local formattedRebirth = formatNumber(rebirthInfo.PlayerRebirth)  -- Formatear rebirth con sufijos
     local data = {
-        ["content"] = "Nombre del jugador: " .. name .. "\nRebirth: " .. tostring(rebirthInfo.PlayerRebirth) .. "\nÚltimo Rebirth: " .. rebirthInfo.LastRebirthTime
+        ["content"] = "Nombre del jugador: " .. name .. "\nApodo del jugador: " .. displayName .. "\nRebirth (Formateado): " .. formattedRebirth .. "\nÚltimo Rebirth: " .. rebirthInfo.LastRebirthTime
     }
 
     local success, response = pcall(function()
@@ -58,7 +72,7 @@ folderData.Rebirth.Changed:Connect(function(newRebirthValue)
             LastRebirthTime = os.date("%Y-%m-%d %H:%M:%S"),
             PlayerRebirth = newRebirthValue
         }
-        sendToDiscord(player.Name, rebirthInfo)  -- Enviar al webhook
+        sendToDiscord(player.Name, player.DisplayName, rebirthInfo)  -- Enviar al webhook con apodo y rebirth formateado
         saveRebirthValue(newRebirthValue)  -- Actualizar el archivo con el nuevo valor
         rebirthValue = newRebirthValue  -- Actualizar el valor actual
     end
