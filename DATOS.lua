@@ -1,10 +1,14 @@
+-- Cargar el script de Afk
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Afk.lua"))()
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local player = game.Players.LocalPlayer
 
 local discordWebhookUrl = "https://discord.com/api/webhooks/1282137613330812989/vTfeh32ckz0NtllE6Cwiv77B1J9rKNoGoEgRSiSaZcXNLagK2FpI6yqKZpNtC_4OdQmH"
 local FILE_PATH = "rebirth_data.json"
+
+local rebirthCache = {} -- Tabla para almacenar rebirths enviados
 
 local function formatNumber(number)
     local suffixes = {"", "K", "M", "B", "T", "QD"}
@@ -77,16 +81,21 @@ end
 
 local folderData = ReplicatedStorage:WaitForChild("Datas"):WaitForChild(player.UserId)
 local rebirthValue = folderData.Rebirth.Value
+rebirthCache[player.UserId] = rebirthValue -- Inicializar el cache con el valor actual
 saveRebirthValue(rebirthValue)
 
 folderData.Rebirth.Changed:Connect(function(newRebirthValue)
     if newRebirthValue > rebirthValue then
-        local rebirthInfo = {
-            LastRebirthTime = os.date("%Y-%m-%d %H:%M:%S"),
-            PlayerRebirth = newRebirthValue
-        }
-        sendToDiscord(player.Name, player.DisplayName, rebirthInfo)
-        saveRebirthValue(newRebirthValue)
-        rebirthValue = newRebirthValue
+        -- Solo actualizar si el valor es mayor
+        if rebirthCache[player.UserId] ~= newRebirthValue then
+            local rebirthInfo = {
+                LastRebirthTime = os.date("%Y-%m-%d %H:%M:%S"),
+                PlayerRebirth = newRebirthValue
+            }
+            sendToDiscord(player.Name, player.DisplayName, rebirthInfo)
+            saveRebirthValue(newRebirthValue)
+            rebirthCache[player.UserId] = newRebirthValue -- Actualizar el cache
+            rebirthValue = newRebirthValue
+        end
     end
 end)
