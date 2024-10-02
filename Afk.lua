@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local yo = Players.LocalPlayer
+local placeId = game.PlaceId  -- ID del lugar actual
 
 local npcList = {
     {"SSJG Kakata", 37.5e6},
@@ -11,7 +12,7 @@ local npcList = {
     {"Chilly", 550000},
     {"Super Vegetable", 188000},
     {"Top X Fighter", 115000},
-    {"Mapa", 75000},  -- "Mapa" es el primer NPC
+    {"Mapa", 75000},  
     {"Radish", 45000},
     {"Kid Nohag", 20000},
     {"Klirin", 0},
@@ -26,18 +27,22 @@ local npcList = {
     {"Vegetable (GoD in-training)", 50e6},
 }
 
+-- Verifica si el jugador es válido para teleportarse
 local function player()
     return yo.Character and yo.Character:FindFirstChild("Humanoid") and yo.Character.Humanoid.Health > 0 and yo.Character:FindFirstChild("HumanoidRootPart")
 end
 
+-- Retorna la fuerza del jugador
 local function valorMinimo()
     return game.ReplicatedStorage.Datas[yo.UserId].Strength.Value
 end
 
+-- Retorna el valor de rebirth del jugador
 local function rebirthValue()
     return game.ReplicatedStorage.Datas[yo.UserId].Rebirth.Value
 end
 
+-- Teletransporta al jugador a un NPC
 local function tpANPC(npc)
     local npcInstance = game.Workspace.Others.NPCs:FindFirstChild(npc[1])
     if npcInstance and npcInstance:FindFirstChild("HumanoidRootPart") and player() then
@@ -47,6 +52,7 @@ local function tpANPC(npc)
     return false
 end
 
+-- Función para manejar los teletransportes basados en las condiciones
 local function iniciarTeletransporte()
     while true do
         -- Si el jugador tiene más de 2000 rebirths
@@ -69,35 +75,57 @@ local function iniciarTeletransporte()
                     wait(1)  -- Espera 1 segundo después de teletransportar al segundo NPC
                 end
             else
-                -- Comienza desde la lista normal de NPCs
-                local lastNpcIndex = nil
-                for i, npc in ipairs(npcList) do
-                    if valorMinimo() >= npc[2] then
-                        lastNpcIndex = i
+                -- Si el jugador está en el lugar con ID 3311165597 y tiene 150e6 de fuerza o más
+                if placeId == 3311165597 and valorMinimo() >= 150e6 then
+                    -- Busca dos NPCs consecutivos en la lista
+                    local lastNpcIndex = nil
+                    for i, npc in ipairs(npcList) do
+                        if valorMinimo() >= npc[2] then
+                            lastNpcIndex = i
 
-                        if tpANPC(npc) then
-                            wait(1)  -- Espera 1 segundo después de teletransportar a este NPC
+                            if tpANPC(npcList[i]) then
+                                wait(1)  -- Espera 1 segundo después de teletransportar al primer NPC
 
-                            if npcList[i + 1] then
-                                tpANPC(npcList[i + 1])
-                                wait(1)
+                                -- Teletransporta al siguiente NPC de la lista si existe
+                                if npcList[i + 1] then
+                                    tpANPC(npcList[i + 1])
+                                    wait(1)  -- Espera 1 segundo después del segundo teletransporte
+                                end
+                                break
+                            end
+                        end
+                    end
+                else
+                    -- Comienza desde la lista normal de NPCs si no está en el lugar específico o no cumple la fuerza
+                    local lastNpcIndex = nil
+                    for i, npc in ipairs(npcList) do
+                        if valorMinimo() >= npc[2] then
+                            lastNpcIndex = i
 
-                                if npcList[i + 2] then
-                                    tpANPC(npcList[i + 2])
+                            if tpANPC(npc) then
+                                wait(1)  -- Espera 1 segundo después de teletransportar a este NPC
+
+                                if npcList[i + 1] then
+                                    tpANPC(npcList[i + 1])
                                     wait(1)
 
-                                    if npcList[i + 3] then
-                                        tpANPC(npcList[i + 3])
+                                    if npcList[i + 2] then
+                                        tpANPC(npcList[i + 2])
                                         wait(1)
 
-                                        if npcList[i + 4] then
-                                            tpANPC(npcList[i + 4])
-                                            wait(1)  -- Espera 1 segundo antes de continuar
+                                        if npcList[i + 3] then
+                                            tpANPC(npcList[i + 3])
+                                            wait(1)
+
+                                            if npcList[i + 4] then
+                                                tpANPC(npcList[i + 4])
+                                                wait(1)  -- Espera 1 segundo antes de continuar
+                                            end
                                         end
                                     end
                                 end
+                                break
                             end
-                            break
                         end
                     end
                 end
@@ -140,4 +168,5 @@ local function iniciarTeletransporte()
     end
 end
 
+-- Inicia la función de teletransporte
 iniciarTeletransporte()
