@@ -2,7 +2,7 @@ local Players = game:GetService("Players")
 local yo = Players.LocalPlayer
 local placeId = game.PlaceId
 
--- Lista de NPCs con sus requisitos de fuerza
+-- Lista de NPCs
 local npcList = {
     {"SSJG Kakata", 37.5e6},
     {"Broccoli", 35.5e6},
@@ -52,10 +52,10 @@ local function tpANPC(npc)
     end
 end
 
--- Función para verificar si un NPC está vivo
-local function npcVivo(npcName)
-    local npc = game.Workspace.Others.NPCs:FindFirstChild(npcName)
-    return npc and npc:FindFirstChild("Humanoid") and npc.Humanoid.Health > 0
+-- Función para verificar si un boss está vivo
+local function bossVivo(bossName)
+    local boss = game.Workspace.Others.NPCs:FindFirstChild(bossName)
+    return boss and boss:FindFirstChild("Humanoid") and boss.Humanoid.Health > 0
 end
 
 -- Función principal de teletransporte
@@ -65,16 +65,12 @@ local function iniciarTeletransporte()
             if rebirthValue() >= 2000 then
                 -- Verificar si la fuerza supera 5.375e9
                 if valorMinimo() > 5.375e9 then
-                    -- Si el boss Vis (20%) está muerto
-                    if not npcVivo("Vis (20%)") then
-                        -- Hacer tp solo a Wukong Rose
+                    -- Verifica la vida de los bosses y teletransporta según corresponda
+                    if not bossVivo("Vekuta (SSJBUI)") then
                         if tpANPC({"Wukong Rose", 1.25e9}) then wait(1) end
-                    -- Si el boss Vills (50%) está muerto
-                    elseif not npcVivo("Vills (50%)") then
-                        -- Hacer tp solo a Vekuta (SSJBUI)
+                    elseif not bossVivo("Wukong Rose") then
                         if tpANPC({"Vekuta (SSJBUI)", 1.375e9}) then wait(1) end
                     else
-                        -- Hacer tp entre Wukong Rose y Vekuta (SSJBUI)
                         if tpANPC({"Wukong Rose", 1.25e9}) then wait(1) end
                         if tpANPC({"Vekuta (SSJBUI)", 1.375e9}) then wait(1) end
                     end
