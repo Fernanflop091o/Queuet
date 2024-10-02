@@ -60,7 +60,7 @@ local function iniciarTeletransporte()
                 elseif valorMinimo() > 5.375e9 then
                     if tpANPC({"Vekuta (SSJBUI)", 1.375e9}) then wait(1) end
                     if tpANPC({"Wukong Rose", 1.25e9}) then wait(1) end
-                elseif placeId == 3311165597 and valorMinimo() >= 89e6 then
+                elseif placeId == 3311165597 and valorMinimo() >= 40e6 then
                     for i, npc in ipairs(npcList) do
                         if valorMinimo() >= npc[2] then
                             if tpANPC(npc) then
