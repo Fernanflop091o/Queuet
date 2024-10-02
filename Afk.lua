@@ -76,7 +76,7 @@ local function iniciarTeletransporte()
                 end
             else
                 -- Si el jugador está en el lugar con ID 3311165597 y tiene 150e6 de fuerza o más
-                if placeId == 3311165597 and valorMinimo() >= 60e6 then
+                if placeId == 3311165597 and valorMinimo() >= 89e6 then
                     -- Busca dos NPCs consecutivos en la lista
                     local lastNpcIndex = nil
                     for i, npc in ipairs(npcList) do
