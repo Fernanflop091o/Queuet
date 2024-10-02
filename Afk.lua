@@ -11,7 +11,7 @@ local npcList = {
     {"Chilly", 550000},
     {"Super Vegetable", 188000},
     {"Top X Fighter", 115000},
-    {"Mapa", 75000},
+    {"Mapa", 75000},  -- "Mapa" es el primer NPC
     {"Radish", 45000},
     {"Kid Nohag", 20000},
     {"Klirin", 0},
@@ -49,80 +49,94 @@ end
 
 local function iniciarTeletransporte()
     while true do
+        -- Si el jugador tiene más de 2000 rebirths
         if rebirthValue() >= 2000 then
-            if valorMinimo() <= 0 then
-                -- Teletransportar al NPC "Mapa" si la fuerza es menor o igual a 0
+            -- Comienza desde "Mapa" si la fuerza es 0
+            if valorMinimo() == 0 then
                 local npcMapa = {"Mapa", 75000}
-                local successMapa, errMapa = pcall(function()
-                    if tpANPC(npcMapa) then
-                        wait(0.8)  -- Espera medio segundo después de teletransportar a "Mapa"
-                    else
-                        error("Error al teletransportar a " .. npcMapa[1])
-                    end
-                end)
-
-                if not successMapa then
-                    warn(errMapa)  -- Muestra un mensaje de advertencia en caso de error
-                end
+                tpANPC(npcMapa)
+                wait(1)  -- Espera 1 segundo después de teletransportar a "Mapa"
             elseif valorMinimo() > 5.375e9 then
-                -- Teletransportar a los dos NPCs más fuertes
+                -- Teletransporta a los NPCs más fuertes
                 local npc1 = {"Vekuta (SSJBUI)", 1.375e9}
                 local npc2 = {"Wukong Rose", 1.25e9}
 
-                local success1, err1 = pcall(function()
-                    if tpANPC(npc1) then
-                        wait(0.7)  -- Espera medio segundo antes de ir al siguiente
-                    else
-                        error("Error al teletransportar a " .. npc1[1])
-                    end
-                end)
-
-                if not success1 then
-                    warn(err1)  -- Muestra un mensaje de advertencia en caso de error
+                if tpANPC(npc1) then
+                    wait(1)  -- Espera 1 segundo antes de ir al siguiente NPC
                 end
 
-                local success2, err2 = pcall(function()
-                    if tpANPC(npc2) then
-                        wait(0.7)  -- Espera medio segundo después de teletransportar al segundo NPC
-                    else
-                        error("Error al teletransportar a " .. npc2[1])
-                    end
-                end)
-
-                if not success2 then
-                    warn(err2)  -- Muestra un mensaje de advertencia en caso de error
+                if tpANPC(npc2) then
+                    wait(1)  -- Espera 1 segundo después de teletransportar al segundo NPC
                 end
             else
+                -- Comienza desde la lista normal de NPCs
                 local lastNpcIndex = nil
                 for i, npc in ipairs(npcList) do
                     if valorMinimo() >= npc[2] then
                         lastNpcIndex = i
 
-                        local success, err = pcall(function()
-                            if tpANPC(npc) then
-                                wait(0.8)
+                        if tpANPC(npc) then
+                            wait(1)  -- Espera 1 segundo después de teletransportar a este NPC
 
-                                for j = 1, 4 do
-                                    if npcList[i + j] then
-                                        if tpANPC(npcList[i + j]) then
-                                            wait(0.8)
-                                        else
-                                            error("Error al teletransportar a " .. npcList[i + j][1])
+                            if npcList[i + 1] then
+                                tpANPC(npcList[i + 1])
+                                wait(1)
+
+                                if npcList[i + 2] then
+                                    tpANPC(npcList[i + 2])
+                                    wait(1)
+
+                                    if npcList[i + 3] then
+                                        tpANPC(npcList[i + 3])
+                                        wait(1)
+
+                                        if npcList[i + 4] then
+                                            tpANPC(npcList[i + 4])
+                                            wait(1)  -- Espera 1 segundo antes de continuar
                                         end
                                     end
                                 end
                             end
-                        end)
+                            break
+                        end
+                    end
+                end
+            end
+        else
+            -- Si el jugador no tiene 2000 rebirths, revisa la fuerza
+            local lastNpcIndex = nil
+            for i, npc in ipairs(npcList) do
+                if valorMinimo() >= npc[2] then
+                    lastNpcIndex = i
 
-                        if not success then
-                            warn(err)  -- Muestra un mensaje de advertencia en caso de error
+                    if tpANPC(npc) then
+                        wait(1)  -- Espera 1 segundo después de teletransportar a este NPC
+
+                        if npcList[i + 1] then
+                            tpANPC(npcList[i + 1])
+                            wait(1)
+
+                            if npcList[i + 2] then
+                                tpANPC(npcList[i + 2])
+                                wait(1)
+
+                                if npcList[i + 3] then
+                                    tpANPC(npcList[i + 3])
+                                    wait(1)
+
+                                    if npcList[i + 4] then
+                                        tpANPC(npcList[i + 4])
+                                        wait(1)  -- Espera 1 segundo antes de continuar
+                                    end
+                                end
+                            end
                         end
                         break
                     end
                 end
             end
         end
-        wait(0.7)
+        wait(1)  -- Espera un momento antes de verificar nuevamente
     end
 end
 
