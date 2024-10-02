@@ -52,26 +52,33 @@ local function tpANPC(npc)
     end
 end
 
+-- Función para verificar si un NPC está vivo
+local function npcVivo(npcName)
+    local npc = game.Workspace.Others.NPCs:FindFirstChild(npcName)
+    return npc and npc:FindFirstChild("Humanoid") and npc.Humanoid.Health > 0
+end
+
 -- Función principal de teletransporte
 local function iniciarTeletransporte()
     while true do
         local success, err = pcall(function()
             if rebirthValue() >= 2000 then
-                if valorMinimo() == 0 then
-                    tpANPC({"Mapa", 75000})
-                    wait(1)
-                elseif valorMinimo() > 5.375e9 then
-                    if tpANPC({"Vekuta (SSJBUI)", 1.375e9}) then wait(1) end
-                    if tpANPC({"Wukong Rose", 1.25e9}) then wait(1) end
-                elseif placeId == 3311165597 and valorMinimo() >= 86e6 then
-                    -- Teletransportarse entre 2 NPCs si la fuerza es mayor a 90e6
-                    local npc1 = {"Broccoli", 35.5e6}
-                    local npc2 = {"SSJG Kakata", 37.5e6}
-                    tpANPC(npc1)
-                    wait(1)
-                    tpANPC(npc2)
-                    wait(1)
-                elseif placeId == 3311165597 and valorMinimo() < 86e6 then
+                -- Verificar si la fuerza supera 5.375e9
+                if valorMinimo() > 5.375e9 then
+                    -- Si el boss Vis (20%) está muerto
+                    if not npcVivo("Vis (20%)") then
+                        -- Hacer tp solo a Wukong Rose
+                        if tpANPC({"Wukong Rose", 1.25e9}) then wait(1) end
+                    -- Si el boss Vills (50%) está muerto
+                    elseif not npcVivo("Vills (50%)") then
+                        -- Hacer tp solo a Vekuta (SSJBUI)
+                        if tpANPC({"Vekuta (SSJBUI)", 1.375e9}) then wait(1) end
+                    else
+                        -- Hacer tp entre Wukong Rose y Vekuta (SSJBUI)
+                        if tpANPC({"Wukong Rose", 1.25e9}) then wait(1) end
+                        if tpANPC({"Vekuta (SSJBUI)", 1.375e9}) then wait(1) end
+                    end
+                elseif placeId == 3311165597 and valorMinimo() < 90e6 then
                     -- Teletransportarse entre 3 NPCs si la fuerza es menor a 90e6
                     local npc1 = {"Broccoli", 35.5e6}
                     local npc2 = {"SSJG Kakata", 37.5e6}
