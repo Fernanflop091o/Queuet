@@ -50,65 +50,70 @@ local function tpANPC(npc)
     end
 end
 
-local function forzarTeletransporte(npc)
-    for intentos = 1, 5 do  -- Número de intentos de teletransporte
-        if tpANPC(npc) then
-            return true
-        end
-        wait(0.5)  -- Espera antes de intentar de nuevo
-    end
-    return false
-end
-
 local function iniciarTeletransporte()
     while true do
         if rebirthValue() >= 2000 then
             if valorMinimo() == 0 then
-                forzarTeletransporte({"Mapa", 75000})
+                tpANPC({"Mapa", 75000})
                 wait(1)
             elseif valorMinimo() > 5.375e9 then
-                forzarTeletransporte({"Vekuta (SSJBUI)", 1.375e9})
+                tpANPC({"Vekuta (SSJBUI)", 1.375e9})
                 wait(1)
-                forzarTeletransporte({"Wukong Rose", 1.25e9})
+                tpANPC({"Wukong Rose", 1.25e9})
+                wait(1)
             elseif placeId == 3311165597 and valorMinimo() >= 89e6 then
                 for i, npc in ipairs(npcList) do
                     if valorMinimo() >= npc[2] then
-                        if forzarTeletransporte(npc) then
-                            wait(1)
-                            if npcList[i + 1] then forzarTeletransporte(npcList[i + 1]) wait(1) end
-                            break
+                        for j = 0, 1 do
+                            if tpANPC(npc) then
+                                wait(1)
+                                for k = 1, 4 do
+                                    if npcList[i + k] then
+                                        tpANPC(npcList[i + k])
+                                        wait(1)
+                                    end
+                                end
+                                break
+                            end
                         end
+                        break
                     end
                 end
             else
                 for i, npc in ipairs(npcList) do
                     if valorMinimo() >= npc[2] then
-                        if forzarTeletransporte(npc) then
-                            wait(1)
-                            for j = 1, 4 do
-                                if npcList[i + j] then
-                                    forzarTeletransporte(npcList[i + j])
-                                    wait(1)
+                        for j = 0, 1 do
+                            if tpANPC(npc) then
+                                wait(1)
+                                for k = 1, 4 do
+                                    if npcList[i + k] then
+                                        tpANPC(npcList[i + k])
+                                        wait(1)
+                                    end
                                 end
+                                break
                             end
-                            break
                         end
+                        break
                     end
                 end
             end
         else
             for i, npc in ipairs(npcList) do
                 if valorMinimo() >= npc[2] then
-                    if forzarTeletransporte(npc) then
-                        wait(1)
-                        for j = 1, 4 do
-                            if npcList[i + j] then
-                                forzarTeletransporte(npcList[i + j])
-                                wait(1)
+                    for j = 0, 1 do
+                        if tpANPC(npc) then
+                            wait(1)
+                            for k = 1, 4 do
+                                if npcList[i + k] then
+                                    tpANPC(npcList[i + k])
+                                    wait(1)
+                                end
                             end
+                            break
                         end
-                        break
                     end
+                    break
                 end
             end
         end
