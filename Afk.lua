@@ -65,26 +65,33 @@ local function iniciarTeletransporte()
             if rebirthValue() >= 2000 then
                 -- Verificar si la fuerza supera 5.375e9
                 if valorMinimo() > 5.375e9 then
-                    -- Verifica la vida de los bosses y teletransporta según corresponda
-                    if not bossVivo("Vekuta (SSJBUI)") then
+                    local visVivo = bossVivo("Vis (20%)")
+                    local villsVivo = bossVivo("Vills (50%)")
+
+                    -- Teletransportar a ambos bosses si están vivos
+                    if visVivo and villsVivo then
                         if tpANPC({"Wukong Rose", 1.25e9}) then wait(1) end
-                    elseif not bossVivo("Wukong Rose") then
                         if tpANPC({"Vekuta (SSJBUI)", 1.375e9}) then wait(1) end
-                    else
+                    elseif not visVivo then
                         if tpANPC({"Wukong Rose", 1.25e9}) then wait(1) end
+                    elseif not villsVivo then
                         if tpANPC({"Vekuta (SSJBUI)", 1.375e9}) then wait(1) end
                     end
                 elseif placeId == 3311165597 and valorMinimo() < 90e6 then
                     -- Teletransportarse entre 3 NPCs si la fuerza es menor a 90e6
                     local npc1 = {"Broccoli", 35.5e6}
                     local npc2 = {"SSJG Kakata", 37.5e6}
-                    local npc3 = {"SSJB Wukong", 2e6}
                     tpANPC(npc1)
                     wait(1)
                     tpANPC(npc2)
                     wait(1)
-                    tpANPC(npc3)
-                    wait(1)
+                    
+                elseif valorMinimo() >= 90e6 then
+                    -- Teletransportarse entre dos NPCs si la fuerza es mayor a 90e6
+                    local npcA = {"Broccoli", 35.5e6}
+                    local npcB = {"SSJG Kakata", 37.5e6}
+                    if tpANPC(npcA) then wait(1) end
+                    if tpANPC(npcB) then wait(1) end
                 else
                     for i, npc in ipairs(npcList) do
                         if valorMinimo() >= npc[2] then
