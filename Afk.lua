@@ -1,7 +1,7 @@
 local Players = game:GetService("Players")
 local yo = Players.LocalPlayer
 
--- Lista de NPCs y su fuerza mínima requerida
+-- Lista de NPCs con su fuerza mínima requerida
 local npcList = {
     {"SSJG Kakata", 37.5e6},
     {"Broccoli", 35.5e6},
@@ -27,85 +27,81 @@ local npcList = {
     {"Vegetable (GoD in-training)", 50e6},
 }
 
+-- Función que verifica si el jugador está activo y puede ser teletransportado
 local function player()
     return yo.Character and yo.Character:FindFirstChild("Humanoid") and yo.Character.Humanoid.Health > 0 and yo.Character:FindFirstChild("HumanoidRootPart")
 end
 
+-- Retorna el valor de fuerza actual del jugador
 local function valorMinimo()
     return game.ReplicatedStorage.Datas[yo.UserId].Strength.Value
 end
 
+-- Retorna el valor de rebirth actual del jugador
 local function rebirthValue()
     return game.ReplicatedStorage.Datas[yo.UserId].Rebirth.Value
 end
 
+-- Función para teletransportar al jugador a un NPC específico
 local function tpANPC(npc)
     local npcInstance = game.Workspace.Others.NPCs:FindFirstChild(npc[1])
     if npcInstance and npcInstance:FindFirstChild("HumanoidRootPart") and player() then
-        yo.Character.HumanoidRootPart.CFrame = npcInstance.HumanoidRootPart.CFrame * CFrame.new(3, 0, 0) -- Teletransporta al jugador a 3 unidades al lado del NPC
-        print("Teletransportado junto al NPC: " .. npc[1])
+        yo.Character.HumanoidRootPart.CFrame = npcInstance.HumanoidRootPart.CFrame * CFrame.new(3, 0, 0)
         return true
     end
     return false
 end
 
+-- Función principal para manejar el teletransporte basado en la fuerza
 local function iniciarTeletransporte()
     while true do
         if rebirthValue() >= 2000 then
-            if valorMinimo() == 0 then
-                -- Teletransportar desde Mapa si la fuerza es 0
-                local mapaNpc = game.Workspace.Others.NPCs:FindFirstChild("Mapa")
-                if mapaNpc and mapaNpc:FindFirstChild("HumanoidRootPart") and player() then
-                    yo.Character.HumanoidRootPart.CFrame = mapaNpc.HumanoidRootPart.CFrame * CFrame.new(3, 0, 0) -- Teletransporta al jugador al lado del NPC "Mapa"
-                    print("Teletransportado desde Mapa")
-                    wait(1) -- Espera un segundo antes de continuar
-                end
-            else
-                -- Teletransportar entre cinco NPCs actuales
-                local lastNpcIndex = nil
+            -- Verifica si la fuerza es mayor a 5.375e9
+            if valorMinimo() > 5.375e9 then
+                -- Solo teletransporta a los dos NPCs más fuertes
+                local npc1 = {"Vekuta (SSJBUI)", 1.375e9}
+                local npc2 = {"Wukong Rose", 1.25e9}
 
+                tpANPC(npc1)
+                wait(0.7)  -- Espera medio segundo antes de ir al siguiente
+                tpANPC(npc2)
+            else
+                -- Si la fuerza es menor, sigue con el flujo normal de NPCs
+                local lastNpcIndex = nil
                 for i, npc in ipairs(npcList) do
                     if valorMinimo() >= npc[2] then
-                        lastNpcIndex = i  -- Guarda el índice del NPC actual
+                        lastNpcIndex = i
 
-                        -- Teletransporta al NPC actual
                         if tpANPC(npc) then
-                            wait(1) -- Espera 0.01 segundos
+                            wait(.8)
 
-                            -- Teletransporta al siguiente NPC
                             if npcList[i + 1] then
-                                tpANPC(npcList[i + 1]) -- Teletransporta al siguiente NPC
-                                print("Teletransportado junto al siguiente NPC: " .. npcList[i + 1][1])
-                                wait(1) -- Espera 0.01 segundos
+                                tpANPC(npcList[i + 1])
+                                wait(.8)
 
-                                -- Teletransporta al siguiente del siguiente NPC
                                 if npcList[i + 2] then
-                                    tpANPC(npcList[i + 2]) -- Teletransporta al siguiente del siguiente NPC
-                                    print("Teletransportado junto al siguiente del siguiente NPC: " .. npcList[i + 2][1])
-                                    wait(1) -- Espera 0.01 segundos
+                                    tpANPC(npcList[i + 2])
+                                    wait(.8)
 
-                                    -- Teletransporta al siguiente del siguiente del siguiente NPC
                                     if npcList[i + 3] then
-                                        tpANPC(npcList[i + 3]) -- Teletransporta al siguiente del siguiente del siguiente NPC
-                                        print("Teletransportado junto al siguiente del siguiente del siguiente NPC: " .. npcList[i + 3][1])
-                                        wait(1) -- Espera 0.01 segundos
+                                        tpANPC(npcList[i + 3])
+                                        wait(.8)
 
-                                        -- Teletransporta al siguiente del siguiente del siguiente del siguiente NPC
                                         if npcList[i + 4] then
-                                            tpANPC(npcList[i + 4]) -- Teletransporta al siguiente del siguiente del siguiente del siguiente NPC
-                                            print("Teletransportado junto al siguiente del siguiente del siguiente del siguiente NPC: " .. npcList[i + 4][1])
+                                            tpANPC(npcList[i + 4])
                                         end
                                     end
                                 end
                             end
-                            break  -- Salimos del bucle para evitar múltiples teletransportes en un solo ciclo
+                            break
                         end
                     end
                 end
             end
         end
-        wait(.05)  -- Espera un segundo antes de volver a verificar
+        wait(.01) -- Espera un segundo antes de revisar de nuevo
     end
 end
 
+-- Inicia la función de teletransporte
 iniciarTeletransporte()
