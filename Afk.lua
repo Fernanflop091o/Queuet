@@ -45,81 +45,69 @@ local function tpANPC(npc)
         yo.Character.HumanoidRootPart.CFrame = npcInstance.HumanoidRootPart.CFrame * CFrame.new(3, 0, 0)
         return true
     else
-        warn("No se pudo teletransportar a: " .. (npc and npc[1] or "Desconocido"))
+        warn("No se pudo teletransportar a: " .. npc[1])
         return false
     end
 end
 
 local function iniciarTeletransporte()
     while true do
-        local teleported = false  -- Flag para controlar si se ha realizado un teletransporte
-
-        if rebirthValue() >= 2000 then
-            if valorMinimo() == 0 then
-                if tpANPC({"Mapa", 75000}) then
-                    teleported = true
+        local success, err = pcall(function()
+            if rebirthValue() >= 2000 then
+                if valorMinimo() == 0 then
+                    tpANPC({"Mapa", 75000})
                     wait(1)
-                end
-            elseif valorMinimo() > 5.375e9 then
-                if tpANPC({"Vekuta (SSJBUI)", 1.375e9}) then
-                    teleported = true
-                    wait(1)
-                end
-                if tpANPC({"Wukong Rose", 1.25e9}) then
-                    teleported = true
-                    wait(1)
-                end
-            elseif placeId == 3311165597 and valorMinimo() >= 89e6 then
-                for i, npc in ipairs(npcList) do
-                    if valorMinimo() >= npc[2] and tpANPC(npc) then
-                        teleported = true
-                        wait(1)
-                        if npcList[i + 1] then
-                            tpANPC(npcList[i + 1])
-                            teleported = true
-                            wait(1)
+                elseif valorMinimo() > 5.375e9 then
+                    if tpANPC({"Vekuta (SSJBUI)", 1.375e9}) then wait(1) end
+                    if tpANPC({"Wukong Rose", 1.25e9}) then wait(1) end
+                elseif placeId == 3311165597 and valorMinimo() >= 89e6 then
+                    for i, npc in ipairs(npcList) do
+                        if valorMinimo() >= npc[2] then
+                            if tpANPC(npc) then
+                                wait(1)
+                                if npcList[i + 1] then tpANPC(npcList[i + 1]) wait(1) end
+                                break
+                            end
                         end
-                        break
+                    end
+                else
+                    for i, npc in ipairs(npcList) do
+                        if valorMinimo() >= npc[2] then
+                            if tpANPC(npc) then
+                                wait(1)
+                                for j = 1, 4 do
+                                    if npcList[i + j] then
+                                        tpANPC(npcList[i + j])
+                                        wait(1)
+                                    end
+                                end
+                                break
+                            end
+                        end
                     end
                 end
             else
                 for i, npc in ipairs(npcList) do
-                    if valorMinimo() >= npc[2] and tpANPC(npc) then
-                        teleported = true
-                        wait(1)
-                        for j = 1, 4 do
-                            if npcList[i + j] then
-                                tpANPC(npcList[i + j])
-                                teleported = true
-                                wait(1)
-                            end
-                        end
-                        break
-                    end
-                end
-            end
-        else
-            for i, npc in ipairs(npcList) do
-                if valorMinimo() >= npc[2] and tpANPC(npc) then
-                    teleported = true
-                    wait(1)
-                    for j = 1, 4 do
-                        if npcList[i + j] then
-                            tpANPC(npcList[i + j])
-                            teleported = true
+                    if valorMinimo() >= npc[2] then
+                        if tpANPC(npc) then
                             wait(1)
+                            for j = 1, 4 do
+                                if npcList[i + j] then
+                                    tpANPC(npcList[i + j])
+                                    wait(1)
+                                end
+                            end
+                            break
                         end
                     end
-                    break
                 end
             end
-        end
+            wait(1)
+        end)
 
-        if not teleported then
-            warn("No se pudo teletransportar a ningún NPC, revisando nuevamente...")
+        if not success then
+            warn("Error durante el teletransporte: " .. err)
         end
-
-        wait(1)
     end
 end
 
