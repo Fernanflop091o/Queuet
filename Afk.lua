@@ -42,6 +42,15 @@ local function rebirthValue()
     return game.ReplicatedStorage.Datas[yo.UserId].Rebirth.Value
 end
 
+-- Verifica si un NPC está vivo
+local function isNpcAlive(npcName)
+    local npcInstance = game.Workspace.Others.NPCs:FindFirstChild(npcName)
+    if npcInstance and npcInstance:FindFirstChild("Humanoid") then
+        return npcInstance.Humanoid.Health > 0
+    end
+    return false
+end
+
 -- Teletransporta al jugador a un NPC
 local function tpANPC(npc)
     local npcInstance = game.Workspace.Others.NPCs:FindFirstChild(npc[1])
@@ -63,16 +72,24 @@ local function iniciarTeletransporte()
                 tpANPC(npcMapa)
                 wait(1)  -- Espera 1 segundo después de teletransportar a "Mapa"
             elseif valorMinimo() > 5.375e9 then
-                -- Teletransporta a los NPCs más fuertes
-                local npc1 = {"Vekuta (SSJBUI)", 1.375e9}
-                local npc2 = {"Wukong Rose", 1.25e9}
+                -- Verifica si los jefes están vivos
+                if isNpcAlive("Vekuta (SSJBUI)") and isNpcAlive("Wukong Rose") then
+                    -- Si ambos jefes están vivos, teletransporta a los NPCs más fuertes
+                    local npc1 = {"Vekuta (SSJBUI)", 1.375e9}
+                    local npc2 = {"Wukong Rose", 1.25e9}
 
-                if tpANPC(npc1) then
-                    wait(1)  -- Espera 1 segundo antes de ir al siguiente NPC
-                end
+                    if tpANPC(npc1) then
+                        wait(1)  -- Espera 1 segundo antes de ir al siguiente NPC
+                    end
 
-                if tpANPC(npc2) then
-                    wait(1)  -- Espera 1 segundo después de teletransportar al segundo NPC
+                    if tpANPC(npc2) then
+                        wait(1)  -- Espera 1 segundo después de teletransportar al segundo NPC
+                    end
+                else
+                    -- Si alguno de los jefes está muerto, teletransporta a un NPC normal
+                    local npcNormal = {"SSJG Kakata", 37.5e6}  -- Ejemplo de un NPC normal
+                    tpANPC(npcNormal)
+                    wait(1)  -- Espera 1 segundo después de teletransportar
                 end
             else
                 -- Si el jugador está en el lugar con ID 3311165597 y tiene 150e6 de fuerza o más
