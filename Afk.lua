@@ -1,7 +1,6 @@
 local Players = game:GetService("Players")
 local yo = Players.LocalPlayer
 
--- Lista de NPCs con su fuerza mínima requerida
 local npcList = {
     {"SSJG Kakata", 37.5e6},
     {"Broccoli", 35.5e6},
@@ -27,22 +26,18 @@ local npcList = {
     {"Vegetable (GoD in-training)", 50e6},
 }
 
--- Función que verifica si el jugador está activo y puede ser teletransportado
 local function player()
     return yo.Character and yo.Character:FindFirstChild("Humanoid") and yo.Character.Humanoid.Health > 0 and yo.Character:FindFirstChild("HumanoidRootPart")
 end
 
--- Retorna el valor de fuerza actual del jugador
 local function valorMinimo()
     return game.ReplicatedStorage.Datas[yo.UserId].Strength.Value
 end
 
--- Retorna el valor de rebirth actual del jugador
 local function rebirthValue()
     return game.ReplicatedStorage.Datas[yo.UserId].Rebirth.Value
 end
 
--- Función para teletransportar al jugador a un NPC específico
 local function tpANPC(npc)
     local npcInstance = game.Workspace.Others.NPCs:FindFirstChild(npc[1])
     if npcInstance and npcInstance:FindFirstChild("HumanoidRootPart") and player() then
@@ -52,56 +47,83 @@ local function tpANPC(npc)
     return false
 end
 
--- Función principal para manejar el teletransporte basado en la fuerza
 local function iniciarTeletransporte()
     while true do
         if rebirthValue() >= 2000 then
-            -- Verifica si la fuerza es mayor a 5.375e9
-            if valorMinimo() > 5.375e9 then
-                -- Solo teletransporta a los dos NPCs más fuertes
+            if valorMinimo() <= 0 then
+                -- Teletransportar al NPC "Mapa" si la fuerza es menor o igual a 0
+                local npcMapa = {"Mapa", 75000}
+                local successMapa, errMapa = pcall(function()
+                    if tpANPC(npcMapa) then
+                        wait(0.8)  -- Espera medio segundo después de teletransportar a "Mapa"
+                    else
+                        error("Error al teletransportar a " .. npcMapa[1])
+                    end
+                end)
+
+                if not successMapa then
+                    warn(errMapa)  -- Muestra un mensaje de advertencia en caso de error
+                end
+            elseif valorMinimo() > 5.375e9 then
+                -- Teletransportar a los dos NPCs más fuertes
                 local npc1 = {"Vekuta (SSJBUI)", 1.375e9}
                 local npc2 = {"Wukong Rose", 1.25e9}
 
-                tpANPC(npc1)
-                wait(0.7)  -- Espera medio segundo antes de ir al siguiente
-                tpANPC(npc2)
+                local success1, err1 = pcall(function()
+                    if tpANPC(npc1) then
+                        wait(0.7)  -- Espera medio segundo antes de ir al siguiente
+                    else
+                        error("Error al teletransportar a " .. npc1[1])
+                    end
+                end)
+
+                if not success1 then
+                    warn(err1)  -- Muestra un mensaje de advertencia en caso de error
+                end
+
+                local success2, err2 = pcall(function()
+                    if tpANPC(npc2) then
+                        wait(0.7)  -- Espera medio segundo después de teletransportar al segundo NPC
+                    else
+                        error("Error al teletransportar a " .. npc2[1])
+                    end
+                end)
+
+                if not success2 then
+                    warn(err2)  -- Muestra un mensaje de advertencia en caso de error
+                end
             else
-                -- Si la fuerza es menor, sigue con el flujo normal de NPCs
                 local lastNpcIndex = nil
                 for i, npc in ipairs(npcList) do
                     if valorMinimo() >= npc[2] then
                         lastNpcIndex = i
 
-                        if tpANPC(npc) then
-                            wait(.8)
+                        local success, err = pcall(function()
+                            if tpANPC(npc) then
+                                wait(0.8)
 
-                            if npcList[i + 1] then
-                                tpANPC(npcList[i + 1])
-                                wait(.8)
-
-                                if npcList[i + 2] then
-                                    tpANPC(npcList[i + 2])
-                                    wait(.8)
-
-                                    if npcList[i + 3] then
-                                        tpANPC(npcList[i + 3])
-                                        wait(.8)
-
-                                        if npcList[i + 4] then
-                                            tpANPC(npcList[i + 4])
+                                for j = 1, 4 do
+                                    if npcList[i + j] then
+                                        if tpANPC(npcList[i + j]) then
+                                            wait(0.8)
+                                        else
+                                            error("Error al teletransportar a " .. npcList[i + j][1])
                                         end
                                     end
                                 end
                             end
-                            break
+                        end)
+
+                        if not success then
+                            warn(err)  -- Muestra un mensaje de advertencia en caso de error
                         end
+                        break
                     end
                 end
             end
         end
-        wait(.01) -- Espera un segundo antes de revisar de nuevo
+        wait(0.7)
     end
 end
 
--- Inicia la función de teletransporte
 iniciarTeletransporte()
