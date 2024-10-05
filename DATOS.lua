@@ -22,6 +22,8 @@ bossHealthLabel.Font = Enum.Font.GothamBold
 bossHealthLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 bossHealthLabel.Text = "Buscando jefe..."
 
+local maxDistance = 50 -- Rango máximo en el que considerar a un jefe cercano
+
 -- Función para obtener el jefe más cercano
 local function getClosestBoss()
     local closestBoss = nil
@@ -30,7 +32,7 @@ local function getClosestBoss()
     for _, v in ipairs(game.Workspace.Living:GetChildren()) do
         if v:FindFirstChild("Humanoid") and v.Name ~= yo.Name then -- Asegurarse de no incluir al jugador
             local distance = (yo.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).magnitude
-            if distance < closestDistance then
+            if distance < closestDistance and distance <= maxDistance then
                 closestDistance = distance
                 closestBoss = v
             end
