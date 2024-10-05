@@ -43,14 +43,18 @@ end
 -- Función para actualizar la salud del jefe
 local function updateBossHealth()
     while true do
-        local currentBoss = getClosestBoss() -- Obtener el jefe más cercano
+        if yo.Character and yo.Character:FindFirstChild("Humanoid") and yo.Character.Humanoid.Health > 0 then
+            local currentBoss = getClosestBoss() -- Obtener el jefe más cercano
 
-        if currentBoss and currentBoss:FindFirstChild("Humanoid") then
-            local health = currentBoss.Humanoid.Health
-            local maxHealth = currentBoss.Humanoid.MaxHealth
-            bossHealthLabel.Text = string.format("Jefe Actual: %s\nVida: %d / %d", currentBoss.Name, math.floor(health), math.floor(maxHealth))
+            if currentBoss and currentBoss:FindFirstChild("Humanoid") then
+                local health = currentBoss.Humanoid.Health
+                local maxHealth = currentBoss.Humanoid.MaxHealth
+                bossHealthLabel.Text = string.format("Jefe Actual: %s\nVida: %d / %d", currentBoss.Name, math.floor(health), math.floor(maxHealth))
+            else
+                bossHealthLabel.Text = "No hay jefes cerca"
+            end
         else
-            bossHealthLabel.Text = "No hay jefes cerca"
+            bossHealthLabel.Text = "Estás muerto o no hay un personaje"
         end
 
         wait(0.03) -- Esperar 0.03 segundos antes de volver a verificar
