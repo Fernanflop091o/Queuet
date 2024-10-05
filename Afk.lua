@@ -16,16 +16,13 @@ local npcList = {
     {"Mapa", 75000},
     {"Radish", 45000},
     {"Kid Nohag", 20000},
-    {"Klirin", 0},
-    {"Vekuta (SSJBUI)", 1.375e9},
+    {"Klirin", 0}
+}
+
+-- Jefes que requieren verificación de vida
+local bossList = {
     {"Wukong Rose", 1.25e9},
-    {"Vekuta (LBSSJ4)", 1.05e9},
-    {"Wukong (LBSSJ4)", 675e6},
-    {"Vegetable (LBSSJ4)", 450e6},
-    {"Vis (20%)", 250e6},
-    {"Vills (50%)", 150e6},
-    {"Wukong (Omen)", 75e6},
-    {"Vegetable (GoD in-training)", 50e6},
+    {"Vekuta (SSJBUI)", 1.375e9}
 }
 
 local function player()
@@ -40,7 +37,13 @@ local function rebirthValue()
     return game.ReplicatedStorage.Datas[yo.UserId].Rebirth.Value
 end
 
--- Función para teletransportarse a un NPC
+-- Función para verificar la vida de los jefes
+local function jefeEstaVivo(jefeNombre)
+    local jefeInstance = game.Workspace.Living:FindFirstChild(jefeNombre)
+    return jefeInstance and jefeInstance:FindFirstChild("Humanoid") and jefeInstance.Humanoid.Health > 0
+end
+
+-- Función para teletransportarse a un NPC o jefe
 local function tpANPC(npc)
     local npcInstance = game.Workspace.Others.NPCs:FindFirstChild(npc[1])
     if npcInstance and npcInstance:FindFirstChild("HumanoidRootPart") and player() then
@@ -52,37 +55,44 @@ local function tpANPC(npc)
     end
 end
 
+-- Función para teletransportarse solo si los jefes están vivos
+local function tpEntreJefes()
+    while true do
+        local jefe1 = bossList[1]
+        local jefe2 = bossList[2]
+        
+        local jefe1Vivo = jefeEstaVivo(jefe1[1])
+        local jefe2Vivo = jefeEstaVivo(jefe2[1])
+
+        if jefe1Vivo and jefe2Vivo then
+            print("Ambos jefes están vivos, alternando teletransporte entre ellos...")
+            tpANPC(jefe1)
+            wait(1)
+            tpANPC(jefe2)
+        elseif jefe1Vivo then
+            print(jefe1[1] .. " está vivo, teletransportando solo a " .. jefe1[1])
+            tpANPC(jefe1)
+        elseif jefe2Vivo then
+            print(jefe2[1] .. " está vivo, teletransportando solo a " .. jefe2[1])
+            tpANPC(jefe2)
+        else
+            print("Ambos jefes están muertos, esperando a que revivan...")
+        end
+        wait(1) -- Esperar antes de verificar nuevamente
+    end
+end
+
 -- Función principal de teletransporte
 local function iniciarTeletransporte()
     while true do
         local success, err = pcall(function()
+            -- Verificar si el jugador tiene suficientes rebirths
             if rebirthValue() >= 2000 then
-                if valorMinimo() == 0 then
-                    tpANPC({"Mapa", 75000})
-                    wait(1)
-                elseif valorMinimo() > 2.375e9 then
-                    if tpANPC({"Vekuta (SSJBUI)", 1.375e9}) then wait(1) end
-                    if tpANPC({"Wukong Rose", 1.25e9}) then wait(1) end
-                elseif placeId == 3311165597 and valorMinimo() >= 73e6 then
-                    -- Teletransportarse entre 2 NPCs si la fuerza es mayor a 90e6
-                    local npc1 = {"Broccoli", 35.5e6}
-                    local npc2 = {"SSJG Kakata", 37.5e6}
-                    tpANPC(npc1)
-                    wait(1)
-                    tpANPC(npc2)
-                    wait(1)
-                elseif placeId == 3311165597 and valorMinimo() < 73e6 then
-                    
-                    local npc1 = {"Broccoli", 35.5e6}
-                    local npc2 = {"SSJG Kakata", 37.5e6}
-                    local npc3 = {"SSJB Wukong", 2e6}
-                    tpANPC(npc1)
-                    wait(1)
-                    tpANPC(npc2)
-                    wait(1)
-                    tpANPC(npc3)
-                    wait(1)
+                if valorMinimo() > 2.375e9 then
+                    -- Teletransportar entre los jefes Wukong Rose y Vekuta (SSJBUI) si están vivos
+                    tpEntreJefes()
                 else
+                    -- Teletransportar a los NPC normales
                     for i, npc in ipairs(npcList) do
                         if valorMinimo() >= npc[2] then
                             if tpANPC(npc) then
@@ -99,6 +109,7 @@ local function iniciarTeletransporte()
                     end
                 end
             else
+                -- Para jugadores sin suficientes rebirths
                 for i, npc in ipairs(npcList) do
                     if valorMinimo() >= npc[2] then
                         if tpANPC(npc) then
