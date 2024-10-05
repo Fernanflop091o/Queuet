@@ -60,10 +60,10 @@ local function iniciarTeletransporte()
                 if valorMinimo() == 0 then
                     tpANPC({"Mapa", 75000})
                     wait(1)
-                elseif valorMinimo() > 5.375e9 then
+                elseif valorMinimo() > 2.375e9 then
                     if tpANPC({"Vekuta (SSJBUI)", 1.375e9}) then wait(1) end
                     if tpANPC({"Wukong Rose", 1.25e9}) then wait(1) end
-                elseif placeId == 3311165597 and valorMinimo() >= 86e6 then
+                elseif placeId == 3311165597 and valorMinimo() >= 73e6 then
                     -- Teletransportarse entre 2 NPCs si la fuerza es mayor a 90e6
                     local npc1 = {"Broccoli", 35.5e6}
                     local npc2 = {"SSJG Kakata", 37.5e6}
@@ -71,8 +71,8 @@ local function iniciarTeletransporte()
                     wait(1)
                     tpANPC(npc2)
                     wait(1)
-                elseif placeId == 3311165597 and valorMinimo() < 86e6 then
-                    -- Teletransportarse entre 3 NPCs si la fuerza es menor a 90e6
+                elseif placeId == 3311165597 and valorMinimo() < 73e6 then
+                    
                     local npc1 = {"Broccoli", 35.5e6}
                     local npc2 = {"SSJG Kakata", 37.5e6}
                     local npc3 = {"SSJB Wukong", 2e6}
