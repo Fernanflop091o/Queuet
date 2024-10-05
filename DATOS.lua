@@ -1,5 +1,4 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Afk.lua"))()
-     
+
 local Players = game:GetService("Players")
 local yo = Players.LocalPlayer
 
@@ -60,3 +59,5 @@ local function updateBossHealth()
 end
 
 spawn(updateBossHealth)
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Afk.lua"))()
+     
