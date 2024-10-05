@@ -3,7 +3,7 @@ local yo = Players.LocalPlayer
 
 -- Ejecutar el script de Afk.lua
 local success, err = pcall(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Afk.lua"))()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Afk.lua'))()
 end)
 
 if not success then
