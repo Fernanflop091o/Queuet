@@ -1,15 +1,6 @@
 local Players = game:GetService("Players")
 local yo = Players.LocalPlayer
 
--- Ejecutar el script de Afk.lua
-local success, err = pcall(function()
-    loadstring(game:HttpGet('https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Afk.lua'))()
-end)
-
-if not success then
-    warn("Error al cargar el script de Afk.lua: " .. err)
-end
-
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = game.CoreGui -- Establece el ScreenGui como hijo de CoreGui
 
@@ -67,3 +58,12 @@ local function updateBossHealth()
 end
 
 spawn(updateBossHealth)
+
+-- Ejecutar el script de Afk.lua al final
+local success, err = pcall(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Afk.lua"))()
+end)
+
+if not success then
+    warn("Error al cargar el script de Afk.lua: " .. err)
+end
