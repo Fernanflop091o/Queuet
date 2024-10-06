@@ -31,6 +31,8 @@ local npcList = {
 local bosses = {
     {"Wukong Rose", 1.25e9},
     {"Vekuta (SSJBUI)", 1.375e9},
+    {"Broccoli", 35.5e6},       -- Añadido Broccoli
+    {"SSJG Kakata", 37.5e6},    -- Añadido SSJG Kakata
 }
 
 local function player()
@@ -94,6 +96,14 @@ local function iniciarTeletransporte()
             if rebirthValue() >= 2000 then
                 if valorMinimo() == 0 then
                     tpANPC({"Mapa", 75000})
+                    wait(1)
+                elseif valorMinimo() > 2.375e9 and placeId == 3311165597 then
+                    -- Añadido: Teletransportarse entre Broccoli y SSJG Kakata
+                    local npc1 = {"Broccoli", 35.5e6}
+                    local npc2 = {"SSJG Kakata", 37.5e6}
+                    tpANPC(npc1)
+                    wait(1)
+                    tpANPC(npc2)
                     wait(1)
                 elseif valorMinimo() > 2.375e9 then
                     -- Teletransportarse entre jefes
