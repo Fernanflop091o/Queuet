@@ -105,17 +105,9 @@ local function iniciarTeletransporte()
                     wait(1)
                     tpANPC(npc2)
                     wait(1)
-                elseif valorMinimo() > 2.375e9 then
+                elseif valorMinimo() > 73e6 then
                     -- Teletransportarse entre jefes
-                    tpEntreJefes()
-                elseif placeId == 3311165597 and valorMinimo() >= 73e6 then
-                    -- Teletransportarse entre 2 NPCs si la fuerza es mayor a 90e6
-                    local npc1 = {"Broccoli", 35.5e6}
-                    local npc2 = {"SSJG Kakata", 37.5e6}
-                    tpANPC(npc1)
-                    wait(1)
-                    tpANPC(npc2)
-                    wait(1)
+                    tpEntreJefes()      
                 elseif placeId == 3311165597 and valorMinimo() < 73e6 then
                     local npc1 = {"Broccoli", 35.5e6}
                     local npc2 = {"SSJG Kakata", 37.5e6}
