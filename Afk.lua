@@ -121,7 +121,7 @@ local function iniciarTeletransporte()
                         if valorMinimo() >= npc[2] then
                             if tpANPC(npc) then
                                 wait(1)
-                                for j = 1, 2 do
+                                for j = 1, 1 do
                                     if npcList[i + j] then
                                         tpANPC(npcList[i + j])
                                         wait(1)
@@ -137,7 +137,7 @@ local function iniciarTeletransporte()
                     if valorMinimo() >= npc[2] then
                         if tpANPC(npc) then
                             wait(1)                           
-                            for j = 1, 2 do
+                            for j = 1, 1 do
                                 if npcList[i + j] then
                                     tpANPC(npcList[i + j])
                                     wait(1)
