@@ -97,7 +97,7 @@ local function iniciarTeletransporte()
                 if valorMinimo() == 0 then
                     tpANPC({"Mapa", 75000})
                     wait(1)
-                elseif valorMinimo() > 2.375e9 and placeId == 3311165597 then
+                elseif valorMinimo() > 73e6 and placeId == 3311165597 then
                     -- Añadido: Teletransportarse entre Broccoli y SSJG Kakata
                     local npc1 = {"Broccoli", 35.5e6}
                     local npc2 = {"SSJG Kakata", 37.5e6}
