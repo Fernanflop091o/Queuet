@@ -110,7 +110,7 @@ local function iniciarTeletransporte()
                     tpEntreJefes()      
                 elseif placeId == 3311165597 and valorMinimo() < 73e6 then
             
-                    local npc3 = {"SSJB Wukong", 2e6}
+                    local npc1 = {"SSJB Wukong", 2e6}
                     tpANPC(npc1)
                     wait(1)
                 else
