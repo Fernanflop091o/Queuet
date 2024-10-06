@@ -109,16 +109,20 @@ local function iniciarTeletransporte()
                     -- Teletransportarse entre jefes
                     tpEntreJefes()      
                 elseif placeId == 3311165597 and valorMinimo() < 73e6 then
-            
-                    local npc1 = {"SSJB Wukong", 2e6}
+                    local npc1 = {"SSJB Wukong", 35.5e6}
+                    local npc2 = {"SSJB Wukong", 37.5e6}
+                    local npc3 = {"SSJB Wukong", 2e6}
                     tpANPC(npc1)
+                    wait(1)
+                    tpANPC(npc2)
+                    wait(1)
+                    tpANPC(npc3)
                     wait(1)
                 else
                     for i, npc in ipairs(npcList) do
                         if valorMinimo() >= npc[2] then
                             if tpANPC(npc) then
                                 wait(1)
-                                -- Cambiar de 4 a 2 teletransportes
                                 for j = 1, 2 do
                                     if npcList[i + j] then
                                         tpANPC(npcList[i + j])
@@ -134,8 +138,7 @@ local function iniciarTeletransporte()
                 for i, npc in ipairs(npcList) do
                     if valorMinimo() >= npc[2] then
                         if tpANPC(npc) then
-                            wait(1)
-                            -- Cambiar de 4 a 2 teletransportes
+                            wait(1)                           
                             for j = 1, 2 do
                                 if npcList[i + j] then
                                     tpANPC(npcList[i + j])
@@ -149,7 +152,7 @@ local function iniciarTeletransporte()
             end
             wait(1)
         end)
-
+        
         if not success then
             warn("Error durante el teletransporte: " .. err)
         end
