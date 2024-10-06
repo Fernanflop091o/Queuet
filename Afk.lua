@@ -3,12 +3,13 @@ local yo = Players.LocalPlayer
 local placeId = game.PlaceId
 
 -- Lista de NPCs con sus requisitos de fuerza
+-- Lista de NPCs con sus requisitos de fuerza
 local npcList = {
-    {"SSJG Kakata", 37.5e6},
-    {"Broccoli", 35.5e6},
+    {"SSJG Kakata", 37.5e6},            -- Jefe 1
+    {"Broccoli", 35.5e6},               -- Jefe 2
     {"SSJB Wukong", 2e6},
-    {"Kai-fist Master", 1625000},
-    {"SSJ2 Wukong", 1250000},
+    {"Kai-fist Master", 1.625e6},
+    {"SSJ2 Wukong", 1.25e6},
     {"Perfect Atom", 875000},
     {"Chilly", 550000},
     {"Super Vegetable", 188000},
@@ -17,8 +18,8 @@ local npcList = {
     {"Radish", 45000},
     {"Kid Nohag", 20000},
     {"Klirin", 0},
-    {"Vekuta (SSJBUI)", 1.375e9},
-    {"Wukong Rose", 1.25e9},
+    {"Vekuta (SSJBUI)", 1.375e9},       -- Jefe 3
+    {"Wukong Rose", 1.25e9},            -- Jefe 4
     {"Vekuta (LBSSJ4)", 1.05e9},
     {"Wukong (LBSSJ4)", 675e6},
     {"Vegetable (LBSSJ4)", 450e6},
@@ -28,9 +29,15 @@ local npcList = {
     {"Vegetable (GoD in-training)", 50e6},
 }
 
-local bosses = {
+
+
+-- Lista de jefes con sus requisitos de fuerza
+local bosses1 = {
     {"Wukong Rose", 1.25e9},
     {"Vekuta (SSJBUI)", 1.375e9},
+}
+
+local bosses2 = {
     {"Broccoli", 35.5e6},       -- Añadido Broccoli
     {"SSJG Kakata", 37.5e6},    -- Añadido SSJG Kakata
 }
@@ -65,23 +72,45 @@ local function jefeEstaVivo(jefeNombre)
     return jefeInstance and jefeInstance:FindFirstChild("Humanoid") and jefeInstance.Humanoid.Health > 0
 end
 
--- Función para teletransportarse entre los jefes
-local function tpEntreJefes()
+-- Función para teletransportarse entre los jefes de la primera lista
+local function tpEntreJefes1()
     while true do
-        local jefe1Vivo = jefeEstaVivo(bosses[1][1])
-        local jefe2Vivo = jefeEstaVivo(bosses[2][1])
+        local jefe1Vivo = jefeEstaVivo(bosses1[1][1])
+        local jefe2Vivo = jefeEstaVivo(bosses1[2][1])
 
         if jefe1Vivo and jefe2Vivo then
-            -- Alternar teletransporte entre ambos jefes
-            tpANPC(bosses[1])
+            tpANPC(bosses1[1])
             wait(1)
-            tpANPC(bosses[2])
+            tpANPC(bosses1[2])
         elseif jefe1Vivo then
-            tpANPC(bosses[1])
+            tpANPC(bosses1[1])
         elseif jefe2Vivo then
-            tpANPC(bosses[2])
+            tpANPC(bosses1[2])
         else
-            print("Ambos jefes están muertos, esperando a que revivan...")
+            print("Ambos jefes de la lista 1 están muertos, esperando a que revivan...")
+            wait(5) -- Esperar un poco antes de volver a verificar
+        end
+
+        wait(1) -- Esperar antes de verificar nuevamente
+    end
+end
+
+-- Función para teletransportarse entre los jefes de la segunda lista
+local function tpEntreJefes2()
+    while true do
+        local jefe1Vivo = jefeEstaVivo(bosses2[1][1])
+        local jefe2Vivo = jefeEstaVivo(bosses2[2][1])
+
+        if jefe1Vivo and jefe2Vivo then
+            tpANPC(bosses2[1])
+            wait(1)
+            tpANPC(bosses2[2])
+        elseif jefe1Vivo then
+            tpANPC(bosses2[1])
+        elseif jefe2Vivo then
+            tpANPC(bosses2[2])
+        else
+            print("Ambos jefes de la lista 2 están muertos, esperando a que revivan...")
             wait(5) -- Esperar un poco antes de volver a verificar
         end
 
@@ -98,7 +127,7 @@ local function iniciarTeletransporte()
                     tpANPC({"Mapa", 75000})
                     wait(1)
                 elseif valorMinimo() > 73e6 and placeId == 3311165597 then
-                    -- Añadido: Teletransportarse entre Broccoli y SSJG Kakata
+                    -- Teletransportarse entre Broccoli y SSJG Kakata
                     local npc1 = {"Broccoli", 35.5e6}
                     local npc2 = {"SSJG Kakata", 37.5e6}
                     tpANPC(npc1)
@@ -106,9 +135,10 @@ local function iniciarTeletransporte()
                     tpANPC(npc2)
                     wait(1)
                 elseif valorMinimo() > 73e6 then
-                    -- Teletransportarse entre jefes
-                    tpEntreJefes()      
+                    -- Teletransportarse entre jefes de la lista 1
+                    tpEntreJefes1()      
                 elseif placeId == 3311165597 and valorMinimo() < 73e6 then
+                    -- Teletransportarse a NPCs en la lista
                     local npc1 = {"Broccoli", 35.5e6}
                     local npc2 = {"SSJG Kakata", 37.5e6}
                     local npc3 = {"SSJB Wukong", 2e6}
