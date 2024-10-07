@@ -7,6 +7,8 @@ local discordWebhookUrl = "https://discord.com/api/webhooks/1286118077829742593/
 
 local previousRebirthValue = 0
 local hasSentMessage = false
+local lastRebirthTime = 0
+local elapsedTime = 0
 
 local function sendToDiscord(message)
     local data = {
@@ -59,34 +61,46 @@ local function loadLastRebirthTime()
     return nil
 end
 
-local function calculateElapsedTime(lastRebirthTime)
+local function calculateElapsedTime()
     local currentTime = os.time()
-    local elapsedTime = currentTime - lastRebirthTime
-    return elapsedTime
+    elapsedTime = currentTime - lastRebirthTime
 end
 
-RunService.Stepped:Connect(function()
-    local player = Players.LocalPlayer
-    local playerStats = player.Character and player.Character:FindFirstChild("Stats")
-    local currentRebirthValue = playerStats and playerStats:FindFirstChild("Rebirth") and playerStats.Rebirth.Value or 0
+local function trackRebirth()
+    while true do
+        local player = Players.LocalPlayer
+        local playerStats = player.Character and player.Character:FindFirstChild("Stats")
+        local currentRebirthValue = playerStats and playerStats:FindFirstChild("Rebirth") and playerStats.Rebirth.Value or 0
 
-    if currentRebirthValue > previousRebirthValue then
-        if not hasSentMessage then
-            local lastRebirthTime = loadLastRebirthTime()
+        if currentRebirthValue > previousRebirthValue then
+            if not hasSentMessage then
+                lastRebirthTime = loadLastRebirthTime()
 
-            if lastRebirthTime then
-                local elapsedTime = calculateElapsedTime(lastRebirthTime)
-                sendToDiscord(elapsedTime)
-            else
-                sendToDiscord("Primer rebirth detectado.")
+                if lastRebirthTime then
+                    calculateElapsedTime()
+                    sendToDiscord(elapsedTime)
+                else
+                    sendToDiscord("Primer rebirth detectado.")
+                end
+
+                saveRebirthTime()
+                previousRebirthValue = currentRebirthValue
+                hasSentMessage = true
             end
-
-            saveRebirthTime()
+        elseif currentRebirthValue < previousRebirthValue then
             previousRebirthValue = currentRebirthValue
-            hasSentMessage = true
+            hasSentMessage = false
         end
-    elseif currentRebirthValue < previousRebirthValue then
-        previousRebirthValue = currentRebirthValue
-        hasSentMessage = false
+
+        wait(1) -- Para evitar sobrecargar el bucle
+    end
+end
+
+-- Contar el tiempo en segundo plano usando RunService.Stepped
+RunService.Stepped:Connect(function()
+    if lastRebirthTime > 0 then
+        calculateElapsedTime()
     end
 end)
+
+spawn(trackRebirth)
