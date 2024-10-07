@@ -68,9 +68,11 @@ spawn(updateBossHealth)
 -- Ejecutar el script de Afk.lua al final
 local success, err = pcall(function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Afk.lua"))()
-         loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/DATOS_TIME_REB.Lua"))()
+         
 end)
 
 if not success then
     warn("Error al cargar el script de Afk.lua: " .. err)
 end
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/DATOS_TIME_REB.Lua"))()
