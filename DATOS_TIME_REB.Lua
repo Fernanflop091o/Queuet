@@ -10,7 +10,7 @@ local hasSentMessage = false
 
 local function sendToDiscord(message)
     local data = {
-        content = message
+        content = tostring(message)
     }
 
     local jsonData = HttpService:JSONEncode(data)
@@ -32,13 +32,13 @@ local function sendToDiscord(message)
 end
 
 local function saveRebirthTime()
-    local currentTime = os.date("*t")
+    local currentTime = os.time()
     local success, err = pcall(function()
         local rebirthData = {}
         if isfile(FILE_PATH) then
             rebirthData = HttpService:JSONDecode(readfile(FILE_PATH))
         end
-        table.insert(rebirthData, {hour = currentTime.hour, min = currentTime.min, sec = currentTime.sec})
+        table.insert(rebirthData, {rebirthTime = currentTime})
         writefile(FILE_PATH, HttpService:JSONEncode(rebirthData))
     end)
 
@@ -53,22 +53,16 @@ local function loadLastRebirthTime()
             return HttpService:JSONDecode(readfile(FILE_PATH))
         end)
         if success and #rebirthData > 0 then
-            return rebirthData[#rebirthData]
+            return rebirthData[#rebirthData].rebirthTime
         end
     end
     return nil
 end
 
 local function calculateElapsedTime(lastRebirthTime)
-    local currentTime = os.date("*t")
-    local lastRebirthInSeconds = (lastRebirthTime.hour * 3600) + (lastRebirthTime.min * 60) + lastRebirthTime.sec
-    local currentTimeInSeconds = (currentTime.hour * 3600) + (currentTime.min * 60) + currentTime.sec
-    local elapsedTimeInSeconds = currentTimeInSeconds - lastRebirthInSeconds
-    local hours = math.floor(elapsedTimeInSeconds / 3600)
-    local minutes = math.floor((elapsedTimeInSeconds % 3600) / 60)
-    local seconds = elapsedTimeInSeconds % 60
-    local formattedTime = string.format("%02d horas, %02d minutos y %02d segundos", hours, minutes, seconds)
-    return formattedTime
+    local currentTime = os.time()
+    local elapsedTime = currentTime - lastRebirthTime
+    return elapsedTime
 end
 
 RunService.Stepped:Connect(function()
@@ -82,11 +76,7 @@ RunService.Stepped:Connect(function()
 
             if lastRebirthTime then
                 local elapsedTime = calculateElapsedTime(lastRebirthTime)
-                local message = string.format(
-                    "Nuevo rebirth detectado. Tiempo transcurrido desde el último rebirth: %s.",
-                    elapsedTime
-                )
-                sendToDiscord(message)
+                sendToDiscord(elapsedTime)
             else
                 sendToDiscord("Primer rebirth detectado.")
             end
