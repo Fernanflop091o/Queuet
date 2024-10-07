@@ -59,6 +59,12 @@ local function loadLastRebirthTime()
     return nil
 end
 
+local function formatTime(seconds)
+    local minutes = math.floor(seconds / 60)
+    local remainingSeconds = seconds % 60
+    return string.format("%02d:%02d", minutes, remainingSeconds)
+end
+
 local function trackRebirth()
     while true do
         local player = Players.LocalPlayer
@@ -66,17 +72,22 @@ local function trackRebirth()
         local currentRebirthValue = playerStats and playerStats:FindFirstChild("Rebirth") and playerStats.Rebirth.Value or 0
 
         if currentRebirthValue > previousRebirthValue then
-            -- Detecta el rebirth de inmediato y envía la información
-            lastRebirthTime = os.time()
-            sendToDiscord("Rebirth realizado! Tiempo: " .. os.date("%X", lastRebirthTime))
+            local currentTime = os.time()
+            local elapsedTime = currentTime - (lastRebirthTime or currentTime)
+            local formattedTime = formatTime(elapsedTime)
+
+            -- Enviar el tiempo formateado a Discord en M:S
+            sendToDiscord("Rebirth realizado! Tiempo: " .. formattedTime)
+
+            -- Guardar el nuevo rebirth y su tiempo
             saveRebirthTime()
-            
+            lastRebirthTime = currentTime
             previousRebirthValue = currentRebirthValue
         elseif currentRebirthValue < previousRebirthValue then
             previousRebirthValue = currentRebirthValue
         end
 
-        wait()  -- Evitar sobrecargar el ciclo
+        wait(1)  -- Evitar sobrecargar el ciclo
     end
 end
 
