@@ -96,32 +96,27 @@ local function iniciarTeletransporte()
             if rebirthValue() >= 2000 then
                 if valorMinimo() == 0 then
                     tpANPC({"Mapa", 75000})
-                    wait(1)
-                elseif valorMinimo() > 73e6 and placeId == 3311165597 then
-                    -- Añadido: Teletransportarse entre Broccoli y SSJG Kakata
+                    wait(1)         
+                elseif valorMinimo() > 2.875e9 then
+                    tpEntreJefes()      
+                    
+                 elseif valorMinimo() > 73e6 and placeId == 3311165597 then
                     local npc1 = {"Broccoli", 35.5e6}
                     local npc2 = {"SSJG Kakata", 37.5e6}
                     tpANPC(npc1)
                     wait(1)
                     tpANPC(npc2)
                     wait(1)
-                elseif valorMinimo() > 73e6 then
-                    -- Teletransportarse entre jefes
-                    tpEntreJefes()      
                 elseif placeId == 3311165597 and valorMinimo() < 73e6 then
-                    local npc1 = {"SSJB Wukong", 2e6}
-                    local npc2 = {"Broccoli", 37.5e6}
-                    
+                    local npc1 = {"SSJB Wukong", 2e6}                 
                     tpANPC(npc1)
                     wait(1)
-                    tpANPC(npc2)
-                    wait(1)            
                 else
                     for i, npc in ipairs(npcList) do
                         if valorMinimo() >= npc[2] then
                             if tpANPC(npc) then
                                 wait(1)
-                                for j = 1, 1 do
+                                for j = 1, 3 do
                                     if npcList[i + j] then
                                         tpANPC(npcList[i + j])
                                         wait(1)
@@ -137,7 +132,7 @@ local function iniciarTeletransporte()
                     if valorMinimo() >= npc[2] then
                         if tpANPC(npc) then
                             wait(1)                           
-                            for j = 1, 1 do
+                            for j = 1, 3 do
                                 if npcList[i + j] then
                                     tpANPC(npcList[i + j])
                                     wait(1)
