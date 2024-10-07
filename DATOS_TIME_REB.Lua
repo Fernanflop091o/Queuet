@@ -1,4 +1,5 @@
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
@@ -6,7 +7,6 @@ local FILE_PATH = "RebirthTimes.json"
 local discordWebhookUrl = "https://discord.com/api/webhooks/1286118077829742593/KbfczS76YlMW7x_Q9vbA60XRE78_xc9uvDZOGkzLU5AEfP-fH1iX-_P6YzBg7d6-WiJn"
 
 local previousRebirthValue = 0
-local hasSentMessage = false
 local lastRebirthTime = 0
 local elapsedTime = 0
 
@@ -63,7 +63,7 @@ end
 
 local function calculateElapsedTime()
     local currentTime = os.time()
-    elapsedTime = currentTime - lastRebirthTime
+    return currentTime - lastRebirthTime
 end
 
 local function trackRebirth()
@@ -73,33 +73,24 @@ local function trackRebirth()
         local currentRebirthValue = playerStats and playerStats:FindFirstChild("Rebirth") and playerStats.Rebirth.Value or 0
 
         if currentRebirthValue > previousRebirthValue then
-            if not hasSentMessage then
-                lastRebirthTime = loadLastRebirthTime()
+            lastRebirthTime = loadLastRebirthTime() or os.time()
+            elapsedTime = calculateElapsedTime()
 
-                if lastRebirthTime then
-                    calculateElapsedTime()
-                    sendToDiscord(elapsedTime)
-                else
-                    sendToDiscord("Primer rebirth detectado.")
-                end
-
-                saveRebirthTime()
-                previousRebirthValue = currentRebirthValue
-                hasSentMessage = true
-            end
+            sendToDiscord(elapsedTime)
+            saveRebirthTime()
+            previousRebirthValue = currentRebirthValue
         elseif currentRebirthValue < previousRebirthValue then
             previousRebirthValue = currentRebirthValue
-            hasSentMessage = false
         end
 
-        wait(1) -- Para evitar sobrecargar el bucle
+        wait()
     end
 end
 
--- Contar el tiempo en segundo plano usando RunService.Stepped
-RunService.Stepped:Connect(function()
+-- Contar el tiempo en segundo plano usando RunService
+RunService.Heartbeat:Connect(function()
     if lastRebirthTime > 0 then
-        calculateElapsedTime()
+        elapsedTime = calculateElapsedTime()
     end
 end)
 
