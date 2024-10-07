@@ -7,7 +7,9 @@ local discordWebhookUrl = "https://discord.com/api/webhooks/1286118077829742593/
 
 local previousRebirthValue = 0
 local lastRebirthTime = 0
+local elapsedTime = 0
 
+-- Enviar el mensaje a Discord
 local function sendToDiscord(message)
     local data = {
         content = tostring(message)
@@ -31,6 +33,7 @@ local function sendToDiscord(message)
     end
 end
 
+-- Guardar el tiempo de rebirth en un archivo JSON
 local function saveRebirthTime()
     local currentTime = os.time()
     local success, err = pcall(function()
@@ -47,6 +50,7 @@ local function saveRebirthTime()
     end
 end
 
+-- Cargar el último tiempo de rebirth
 local function loadLastRebirthTime()
     if isfile(FILE_PATH) then
         local success, rebirthData = pcall(function()
@@ -59,37 +63,43 @@ local function loadLastRebirthTime()
     return nil
 end
 
-local function formatTime(seconds)
-    local minutes = math.floor(seconds / 60)
-    local remainingSeconds = seconds % 60
-    return string.format("%02d:%02d", minutes, remainingSeconds)
+-- Calcular el tiempo transcurrido desde el último rebirth
+local function calculateElapsedTime()
+    local currentTime = os.time()
+    return currentTime - lastRebirthTime
 end
 
+-- Función principal para rastrear los rebirths
 local function trackRebirth()
     while true do
         local player = Players.LocalPlayer
         local playerStats = player.Character and player.Character:FindFirstChild("Stats")
         local currentRebirthValue = playerStats and playerStats:FindFirstChild("Rebirth") and playerStats.Rebirth.Value or 0
 
+        -- Si el jugador ha hecho un nuevo rebirth
         if currentRebirthValue > previousRebirthValue then
-            local currentTime = os.time()
-            local elapsedTime = currentTime - (lastRebirthTime or currentTime)
-            local formattedTime = formatTime(elapsedTime)
+            lastRebirthTime = loadLastRebirthTime() or os.time()
+            elapsedTime = calculateElapsedTime()
 
-            -- Enviar el tiempo formateado a Discord en M:S
-            sendToDiscord("Rebirth realizado! Tiempo: " .. formattedTime)
-
-            -- Guardar el nuevo rebirth y su tiempo
+            -- Enviar solo si ya ha hecho rebirth
+            sendToDiscord(elapsedTime)
             saveRebirthTime()
-            lastRebirthTime = currentTime
             previousRebirthValue = currentRebirthValue
+
+        -- Actualizar el valor previo si disminuye
         elseif currentRebirthValue < previousRebirthValue then
             previousRebirthValue = currentRebirthValue
         end
 
-        wait(1)  -- Evitar sobrecargar el ciclo
+        wait() -- Esperar un segundo entre cada verificación
     end
 end
 
--- Llamar la función para rastrear los rebirths
+-- Contar el tiempo en segundo plano usando RunService
+RunService.Heartbeat:Connect(function()
+    if lastRebirthTime > 0 then
+        elapsedTime = calculateElapsedTime()
+    end
+end)
+
 spawn(trackRebirth)
