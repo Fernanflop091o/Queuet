@@ -1,5 +1,4 @@
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
@@ -8,7 +7,6 @@ local discordWebhookUrl = "https://discord.com/api/webhooks/1286118077829742593/
 
 local previousRebirthValue = 0
 local lastRebirthTime = 0
-local elapsedTime = 0
 
 local function sendToDiscord(message)
     local data = {
@@ -61,11 +59,6 @@ local function loadLastRebirthTime()
     return nil
 end
 
-local function calculateElapsedTime()
-    local currentTime = os.time()
-    return currentTime - lastRebirthTime
-end
-
 local function trackRebirth()
     while true do
         local player = Players.LocalPlayer
@@ -73,25 +66,19 @@ local function trackRebirth()
         local currentRebirthValue = playerStats and playerStats:FindFirstChild("Rebirth") and playerStats.Rebirth.Value or 0
 
         if currentRebirthValue > previousRebirthValue then
-            lastRebirthTime = loadLastRebirthTime() or os.time()
-            elapsedTime = calculateElapsedTime()
-
-            sendToDiscord(elapsedTime)
+            -- Detecta el rebirth de inmediato y envía la información
+            lastRebirthTime = os.time()
+            sendToDiscord("Rebirth realizado! Tiempo: " .. os.date("%X", lastRebirthTime))
             saveRebirthTime()
+            
             previousRebirthValue = currentRebirthValue
         elseif currentRebirthValue < previousRebirthValue then
             previousRebirthValue = currentRebirthValue
         end
 
-        wait()
+        wait()  -- Evitar sobrecargar el ciclo
     end
 end
 
--- Contar el tiempo en segundo plano usando RunService
-RunService.Heartbeat:Connect(function()
-    if lastRebirthTime > 0 then
-        elapsedTime = calculateElapsedTime()
-    end
-end)
-
+-- Llamar la función para rastrear los rebirths
 spawn(trackRebirth)
