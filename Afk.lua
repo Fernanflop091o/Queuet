@@ -1,3 +1,4 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/DATOS_TIME_REB.Lua"))()
 local Players = game:GetService("Players")
 local yo = Players.LocalPlayer
 local placeId = game.PlaceId
