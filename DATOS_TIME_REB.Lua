@@ -9,10 +9,10 @@ local previousRebirthValue = 0
 local lastRebirthTime = 0
 local elapsedTime = 0
 
--- Enviar el mensaje a Discord
-local function sendToDiscord(message)
+-- Enviar el mensaje a Discord formateado en minutos y segundos
+local function sendToDiscord(elapsedTimeFormatted)
     local data = {
-        content = tostring(message)
+        content = "Tiempo transcurrido desde el último rebirth: " .. elapsedTimeFormatted
     }
 
     local jsonData = HttpService:JSONEncode(data)
@@ -69,6 +69,13 @@ local function calculateElapsedTime()
     return currentTime - lastRebirthTime
 end
 
+-- Formatear el tiempo transcurrido en minutos y segundos
+local function formatElapsedTime(elapsedTime)
+    local minutes = math.floor(elapsedTime / 60)
+    local seconds = elapsedTime % 60
+    return string.format("%02d minutos y %02d segundos", minutes, seconds)
+end
+
 -- Función principal para rastrear los rebirths
 local function trackRebirth()
     while true do
@@ -81,8 +88,9 @@ local function trackRebirth()
             lastRebirthTime = loadLastRebirthTime() or os.time()
             elapsedTime = calculateElapsedTime()
 
-            -- Enviar solo si ya ha hecho rebirth
-            sendToDiscord(elapsedTime)
+            -- Formatear el tiempo transcurrido y enviarlo a Discord
+            local elapsedTimeFormatted = formatElapsedTime(elapsedTime)
+            sendToDiscord(elapsedTimeFormatted)
             saveRebirthTime()
             previousRebirthValue = currentRebirthValue
 
@@ -91,7 +99,7 @@ local function trackRebirth()
             previousRebirthValue = currentRebirthValue
         end
 
-        wait() -- Esperar un segundo entre cada verificación
+        wait(1) -- Esperar un segundo entre cada verificación
     end
 end
 
