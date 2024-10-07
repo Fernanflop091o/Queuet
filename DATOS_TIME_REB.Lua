@@ -7,7 +7,12 @@ local FILE_PATH = "RebirthTimes.json"
 local discordWebhookUrl = "https://discord.com/api/webhooks/1286118077829742593/KbfczS76YlMW7x_Q9vbA60XRE78_xc9uvDZOGkzLU5AEfP-fH1iX-_P6YzBg7d6-WiJn"
 
 local previousRebirthValue = 0
-local lastRebirthTime = 0
+local hasSentMessage = false
+local rebirthTimeValue = Instance.new("IntValue")
+rebirthTimeValue.Name = "RebirthTimeValue"
+rebirthTimeValue.Value = os.time()
+rebirthTimeValue.Parent = ReplicatedStorage
+
 local elapsedTime = 0
 
 local function sendToDiscord(message)
@@ -63,34 +68,36 @@ end
 
 local function calculateElapsedTime()
     local currentTime = os.time()
-    return currentTime - lastRebirthTime
+    elapsedTime = currentTime - rebirthTimeValue.Value
 end
 
 local function trackRebirth()
     while true do
         local player = Players.LocalPlayer
-        local playerStats = player.Character and player.Character:FindFirstChild("Stats")
-        local currentRebirthValue = playerStats and playerStats:FindFirstChild("Rebirth") and playerStats.Rebirth.Value or 0
+        local playerStats = player:WaitForChild("Stats")
+        local currentRebirthValue = playerStats:WaitForChild("Rebirth").Value
 
         if currentRebirthValue > previousRebirthValue then
-            lastRebirthTime = loadLastRebirthTime() or os.time()
-            elapsedTime = calculateElapsedTime()
+            calculateElapsedTime()
+            sendToDiscord(string.format("Tiempo transcurrido desde el último rebirth: %d segundos.", elapsedTime))
 
-            sendToDiscord(elapsedTime)
             saveRebirthTime()
+            rebirthTimeValue.Value = os.time() -- Actualiza el tiempo del último rebirth
             previousRebirthValue = currentRebirthValue
+            hasSentMessage = true
         elseif currentRebirthValue < previousRebirthValue then
             previousRebirthValue = currentRebirthValue
+            hasSentMessage = false
         end
 
-        wait()
+        wait() -- Para evitar sobrecargar el bucle
     end
 end
 
--- Contar el tiempo en segundo plano usando RunService
+-- Contar el tiempo en segundo plano usando ReplicatedStorage
 RunService.Heartbeat:Connect(function()
-    if lastRebirthTime > 0 then
-        elapsedTime = calculateElapsedTime()
+    if rebirthTimeValue.Value > 0 then
+        calculateElapsedTime()
     end
 end)
 
