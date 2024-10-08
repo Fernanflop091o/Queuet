@@ -1,9 +1,6 @@
-
 local Players = game:GetService("Players")
 local yo = Players.LocalPlayer
-local placeId = game.PlaceId
 
--- Lista de NPCs con sus requisitos de fuerza
 local npcList = {
     {"SSJG Kakata", 37.5e6},
     {"Broccoli", 35.5e6},
@@ -29,12 +26,9 @@ local npcList = {
     {"Vegetable (GoD in-training)", 50e6},
 }
 
-local bosses = {
-    {"Wukong Rose", 1.25e9},
-    {"Vekuta (SSJBUI)", 1.375e9},
-    {"Broccoli", 35.5e6},       -- Añadido Broccoli
-    {"SSJG Kakata", 37.5e6},    -- Añadido SSJG Kakata
-}
+local function logError(err)
+    warn("Error: " .. tostring(err))
+end
 
 local function player()
     return yo.Character and yo.Character:FindFirstChild("Humanoid") and yo.Character.Humanoid.Health > 0 and yo.Character:FindFirstChild("HumanoidRootPart")
@@ -48,79 +42,75 @@ local function rebirthValue()
     return game.ReplicatedStorage.Datas[yo.UserId].Rebirth.Value
 end
 
--- Función para teletransportarse a un NPC
 local function tpANPC(npc)
-    local npcInstance = game.Workspace.Others.NPCs:FindFirstChild(npc[1])
-    if npcInstance and npcInstance:FindFirstChild("HumanoidRootPart") and player() then
-        yo.Character.HumanoidRootPart.CFrame = npcInstance.HumanoidRootPart.CFrame * CFrame.new(3, 0, 0) -- Ajuste de la posición
-        return true
-    else
-        warn("No se pudo teletransportar a: " .. npc[1])
+    local success, err = pcall(function()
+        local npcInstance = game.Workspace.Others.NPCs:FindFirstChild(npc[1])
+        if npcInstance and npcInstance:FindFirstChild("HumanoidRootPart") and player() then
+            yo.Character.HumanoidRootPart.CFrame = npcInstance.HumanoidRootPart.CFrame * CFrame.new(3, 0, 0)
+        else
+            error("NPC or player HumanoidRootPart not found for: " .. npc[1])
+        end
+    end)
+
+    if not success then
+        logError(err)
         return false
     end
+    return true
 end
 
--- Función para verificar la vida de los jefes
-local function jefeEstaVivo(jefeNombre)
-    local jefeInstance = game.Workspace.Living:FindFirstChild(jefeNombre)
-    return jefeInstance and jefeInstance:FindFirstChild("Humanoid") and jefeInstance.Humanoid.Health > 0
-end
-
--- Función para teletransportarse entre los jefes
-local function tpEntreJefes()
-    while true do
-        local jefe1Vivo = jefeEstaVivo(bosses[1][1])
-        local jefe2Vivo = jefeEstaVivo(bosses[2][1])
-
-        if jefe1Vivo and jefe2Vivo then
-            -- Alternar teletransporte entre ambos jefes
-            tpANPC(bosses[1])
-            wait(1)
-            tpANPC(bosses[2])
-        elseif jefe1Vivo then
-            tpANPC(bosses[1])
-        elseif jefe2Vivo then
-            tpANPC(bosses[2])
-        else
-            print("Ambos jefes están muertos, esperando a que revivan...")
-            wait(5) -- Esperar un poco antes de volver a verificar
-        end
-
-        wait(1) -- Esperar antes de verificar nuevamente
-    end
-end
-
--- Función principal de teletransporte
 local function iniciarTeletransporte()
     while true do
         local success, err = pcall(function()
             if rebirthValue() >= 2000 then
                 if valorMinimo() == 0 then
-                    tpANPC({"Mapa", 75000})
-                    wait(1)         
-                elseif valorMinimo() > 2.875e9 then
-                    tpEntreJefes()      
-                    
-                 elseif valorMinimo() > 73e6 and placeId == 3311165597 then
+                    local npcMapa = {"Mapa", 75000}
+                    tpANPC(npcMapa)
+                    wait(1)
+                elseif valorMinimo() < 2.875e9 and placeId == 3311165597 then
                     local npc1 = {"Broccoli", 35.5e6}
                     local npc2 = {"SSJG Kakata", 37.5e6}
                     tpANPC(npc1)
                     wait(1)
                     tpANPC(npc2)
                     wait(1)
-                elseif placeId == 3311165597 and valorMinimo() < 73e6 then
-                    local npc1 = {"SSJB Wukong", 2e6}                 
-                    tpANPC(npc1)
-                    wait(1)
+                elseif valorMinimo() > 2.875e9 then
+                    local npc1 = {"Vekuta (SSJBUI)", 1.375e9}
+                    local npc2 = {"Wukong Rose", 1.25e9}
+
+                    if tpANPC(npc1) then
+                        wait(1)
+                    end
+
+                    if tpANPC(npc2) then
+                        wait(1)
+                    end
                 else
+                    local lastNpcIndex = nil
                     for i, npc in ipairs(npcList) do
                         if valorMinimo() >= npc[2] then
+                            lastNpcIndex = i
+
                             if tpANPC(npc) then
                                 wait(1)
-                                for j = 1, 3 do
-                                    if npcList[i + j] then
-                                        tpANPC(npcList[i + j])
+
+                                if npcList[i + 1] then
+                                    tpANPC(npcList[i + 1])
+                                    wait(1)
+
+                                    if npcList[i + 2] then
+                                        tpANPC(npcList[i + 2])
                                         wait(1)
+
+                                        if npcList[i + 3] then
+                                            tpANPC(npcList[i + 3])
+                                            wait(1)
+
+                                            if npcList[i + 4] then
+                                                tpANPC(npcList[i + 4])
+                                                wait(1)
+                                            end
+                                        end
                                     end
                                 end
                                 break
@@ -129,14 +119,31 @@ local function iniciarTeletransporte()
                     end
                 end
             else
+                local lastNpcIndex = nil
                 for i, npc in ipairs(npcList) do
                     if valorMinimo() >= npc[2] then
+                        lastNpcIndex = i
+
                         if tpANPC(npc) then
-                            wait(1)                           
-                            for j = 1, 3 do
-                                if npcList[i + j] then
-                                    tpANPC(npcList[i + j])
+                            wait(1)
+
+                            if npcList[i + 1] then
+                                tpANPC(npcList[i + 1])
+                                wait(1)
+
+                                if npcList[i + 2] then
+                                    tpANPC(npcList[i + 2])
                                     wait(1)
+
+                                    if npcList[i + 3] then
+                                        tpANPC(npcList[i + 3])
+                                        wait(1)
+
+                                        if npcList[i + 4] then
+                                            tpANPC(npcList[i + 4])
+                                            wait(1)
+                                        end
+                                    end
                                 end
                             end
                             break
@@ -144,12 +151,12 @@ local function iniciarTeletransporte()
                     end
                 end
             end
-            wait(1)
         end)
-        
+
         if not success then
-            warn("Error durante el teletransporte: " .. err)
+            logError(err)
         end
+        wait(1)
     end
 end
 
