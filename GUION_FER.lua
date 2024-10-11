@@ -836,10 +836,11 @@ end)
 
 earthButton.MouseButton1Click:Connect(function()
     SafeCall(function()
-        if #game.Players:GetPlayers() > 2 then
+        local playerCount = #game.Players:GetPlayers()
+        print("Número de jugadores: " .. playerCount)  -- Para depuración
+        if playerCount > 2 then
             game:GetService("TeleportService"):Teleport(3311165597, game.Players.LocalPlayer)
-        end
-        if #game.Players:GetPlayers() < 2 then
+        elseif playerCount < 2 then
             game.ReplicatedStorage.Package.Events.TP:InvokeServer("Earth")
         end
     end)
@@ -847,10 +848,11 @@ end)
 
 billsButton.MouseButton1Click:Connect(function()
   SafeCall(function()
-        if #game.Players:GetPlayers() > 2 then
+        local playerCount = #game.Players:GetPlayers()
+        print("Número de jugadores: " .. playerCount)  -- Para depuración
+        if playerCount > 2 then
             game:GetService("TeleportService"):Teleport(5151400895, game.Players.LocalPlayer)
-        end
-        if #game.Players:GetPlayers() < 2 then
+        elseif playerCount < 2 then
             game.ReplicatedStorage.Package.Events.TP:InvokeServer("Vills Planet")
         end
     end)
