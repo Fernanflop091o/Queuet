@@ -6,6 +6,8 @@ local function logError(err)
     warn("Error: " .. tostring(err))
 end
 
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/GUION_FER.lua"))()
+         
 local function ScriptName()
     local success, err = pcall(function()
         print("Ejecutando ScriptName")
