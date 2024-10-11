@@ -900,12 +900,12 @@ end
     end
 
     button.MouseButton1Click:Connect(function()
-        if bestId then 
-            pcall(function() 
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, bestId) 
-            end) 
-        end
-    end)
+    if bestId and #game.Players:GetPlayers() > 2 then
+        pcall(function() 
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, bestId) 
+        end) 
+    end
+end)
 
     while true do
         SafeCall(updateFPS)   
