@@ -836,7 +836,12 @@ end)
 
 earthButton.MouseButton1Click:Connect(function()
     SafeCall(function()
-        game.ReplicatedStorage.Package.Events.TP:InvokeServer("Earth")
+        if #game.Players:GetPlayers() > 2 then
+            game:GetService("TeleportService"):Teleport(5151400895, game.Players.LocalPlayer)
+        end
+        if #game.Players:GetPlayers() < 2 then
+            game.ReplicatedStorage.Package.Events.TP:InvokeServer("Earth")
+        end
     end)
 end)
 
