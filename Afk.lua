@@ -1,6 +1,6 @@
 local Players = game:GetService("Players")
 local yo = Players.LocalPlayer
-local listaDeJugadores = {"fernanflop091o", "armijosfer2178"}
+local listaDeJugadores = {"fernanfloP091o", "armijosfer2178"}
 
 local function logError(err)
     warn("Error: " .. tostring(err))
@@ -8,7 +8,7 @@ end
 
 local function ScriptName()
     local success, err = pcall(function()
-        print("Ejecutando ScriptName para jugadores específicos")
+        print("Ejecutando ScriptName")
         local Players = game:GetService("Players")
 local yo = Players.LocalPlayer
 local placeId = game.PlaceId
@@ -141,7 +141,7 @@ end
 
 iniciarTeletransporte()
     end)
-
+    
     if not success then
         logError(err)
     end
@@ -149,7 +149,7 @@ end
 
 local function ScriptAction()
     local success, err = pcall(function()
-        print("Ejecutando ScriptAction para otros jugadores")
+        print("Ejecutando ScriptAction")
         local Players = game:GetService("Players")
 local yo = Players.LocalPlayer
 
@@ -314,7 +314,7 @@ end
 
 iniciarTeletransporte()
     end)
-
+    
     if not success then
         logError(err)
     end
@@ -322,14 +322,13 @@ end
 
 local function verificarJugador()
     local success, err = pcall(function()
-       
         for _, nombre in ipairs(listaDeJugadores) do
             if yo.Name == nombre then
-                ScriptName()  -- Ejecuta ScriptName si el jugador está en la lista
+                ScriptName()
                 return
             end
         end
-        ScriptAction()  -- Ejecuta ScriptAction si el jugador no está en la lista
+        ScriptAction()
     end)
 
     if not success then
@@ -340,7 +339,7 @@ end
 local function iniciarVerificacion()
     local success, err = pcall(function()
         if yo then
-            verificarJugador()  -- Inicia la verificación del jugador
+            verificarJugador()
         else
             error("Jugador local no disponible")
         end
@@ -351,5 +350,4 @@ local function iniciarVerificacion()
     end
 end
 
--- Inicia la verificación cuando se ejecute el script
 iniciarVerificacion()
