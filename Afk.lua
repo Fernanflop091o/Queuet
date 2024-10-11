@@ -349,13 +349,9 @@ local function iniciarVerificacion()
 end
 
 coroutine.wrap(function()
-    local loadSuccess, loadErr = pcall(function()
+    pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/GUION_FER.lua"))()
     end)
-
-    if not loadSuccess then
-        warn("Error al cargar el script: " .. loadErr)
-    end
 end)()
 iniciarVerificacion()
 
