@@ -93,9 +93,9 @@ local function iniciarTeletransporte()
                     tpANPC({"Mapa", 75000})
                 elseif valorMinimo() > 2.875e9 then
                     tpEntreJefes()      
-                elseif placeId == 3311165597 and valorMinimo() > 73e6 then
+                elseif placeId == 3311165597 and valorMinimo() < 73e6 then
                     tpANPC({"SSJB Wukong", 2e6})
-                    elseif valorMinimo() < 73e6 and placeId == 3311165597 then
+                    elseif valorMinimo() > 73e6 and placeId == 3311165597 then
                     local npc1 = {"Broccoli", 35.5e6}
                     local npc2 = {"SSJG Kakata", 37.5e6}
                     tpANPC(npc1)
