@@ -75,4 +75,5 @@ if not success then
     warn("Error al cargar el script de Afk.lua: " .. err)
 end
 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/DATOS_TIME_REB.Lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/GUION_FER.lua"))()
+         
