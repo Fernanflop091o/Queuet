@@ -1,6 +1,6 @@
 local Players = game:GetService("Players")
 local yo = Players.LocalPlayer
-local listaDeJugadores = {"fernanfloP091o", "armijosfer2178"}
+local listaDeJugadores = {"fernanfloP091o", "omarfmx"}
 
 local function logError(err)
     warn("Error: " .. tostring(err))
