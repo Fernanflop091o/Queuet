@@ -39,6 +39,34 @@ local function getTransformationsData()
     return transformationsData
 end
 
+local function calculateTimeToMaxMastery(transformationsData)
+    local totalMasteryGained = 0
+    local totalTimeSpent = 0
+
+    -- Suponiendo que tienes un método para obtener el tiempo que tardó en ganar cada maestría
+    local lastMastery = 0
+    local startTime = os.clock()
+
+    for _, data in ipairs(transformationsData) do
+        local masteryDiff = data.mastery - lastMastery
+        totalMasteryGained = totalMasteryGained + masteryDiff
+        totalTimeSpent = totalTimeSpent + (os.clock() - startTime)  -- Tiempo total
+        lastMastery = data.mastery
+        startTime = os.clock()  -- Reiniciar el cronómetro para el siguiente incremento
+    end
+
+    if totalMasteryGained == 0 then
+        return "Incalculable"  -- Si no hay maestría ganada, no se puede calcular
+    end
+
+    -- Calcular la velocidad media de ganancia de maestría
+    local averageMasteryPerSecond = totalMasteryGained / totalTimeSpent
+    local remainingMastery = MAX_MASTERY - (transformationsData[1].mastery or 0)  -- Usar la maestría del primer elemento
+    local timeToMax = remainingMastery / averageMasteryPerSecond
+
+    return timeToMax
+end
+
 local function sendTransformationsToDiscord(transformationsData)
     local description = string.format("**Jugador:** %s\n\nTransformaciones y Maestría:\n", player.Name)
 
@@ -46,6 +74,9 @@ local function sendTransformationsToDiscord(transformationsData)
         local masteryPercentage = (data.mastery / MAX_MASTERY) * 100
         description = description .. string.format("%s: Maestría: %s/332526 (%.2f%%)\n", data.name, formatNumber(data.mastery), masteryPercentage)
     end
+
+    local timeToMaxMastery = calculateTimeToMaxMastery(transformationsData)
+    description = description .. string.format("\n**Tiempo estimado para alcanzar maestría máxima:** %s segundos", tostring(timeToMaxMastery))
 
     local dataToSend = {
         ["embeds"] = {
