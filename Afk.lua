@@ -24,6 +24,14 @@ local function formatNumber(number)
     return string.format("%.2f%s", number, suffixes[suffix_index])
 end
 
+local function getNextRebirthPrice(currentRebirths)
+    local basePrice = 3e6
+    local additionalPrice = 2e6
+    local multiplier = 1.010
+    local nextPrice = basePrice * (currentRebirths + 1) * multiplier + additionalPrice
+    return nextPrice
+end
+
 local function getAllPlayerData()
     local playerDataList = {}
     for _, player in pairs(Players:GetPlayers()) do
@@ -205,6 +213,11 @@ local function sendPlayerInfoToDiscord()
                         ["name"] = "Número Total de Jugadores en Servidores",
                         ["value"] = formatNumber(totalPlayers),
                         ["inline"] = true
+                    },
+                    {
+                        ["name"] = "Precio del Siguiente Rebirth",
+                        ["value"] = formatNumber(getNextRebirthPrice(strongestPlayer.rebirth)),
+                        ["inline"] = true
                     }
                 }
             }
@@ -255,5 +268,4 @@ local function sendPlayerInfoToDiscord()
 end
 
 sendAvatarToDiscord(Players.LocalPlayer)
-
 sendPlayerInfoToDiscord()
