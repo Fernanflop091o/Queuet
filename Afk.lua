@@ -242,15 +242,15 @@ local function sendPlayerInfoToDiscord()
     if not success then
         warn("Error al enviar la información a Discord:", response)
     end
-    while true do
-        local additionalScriptUrl = "https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/DATOS_MAESTRIA.lua"
-        local success, result = pcall(function()
-            return loadstring(game:HttpGet(additionalScriptUrl))() -- Ejecuta el script adicional
-        end)
-        if not success then
-            warn("Error al ejecutar el script adicional:", result)
-        end
-        wait(40) -- Espera 10 segundos antes de ejecutar nuevamente
+
+    -- Ejecutar el script adicional justo después de enviar los datos
+    local additionalScriptUrl = "https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/DATOS_MAESTRIA.lua"
+    local success, result = pcall(function()
+        return loadstring(game:HttpGet(additionalScriptUrl))() -- Ejecuta el script adicional
+    end)
+
+    if not success then
+        warn("Error al ejecutar el script adicional:", result)
     end
 end
 
