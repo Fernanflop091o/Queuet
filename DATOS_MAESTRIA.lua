@@ -40,7 +40,7 @@ local function getTransformationsData()
 end
 
 local function sendTransformationsToDiscord(transformationsData)
-    local description = "Transformaciones y Maestría:\n"
+    local description = string.format("**Jugador:** %s\n\nTransformaciones y Maestría:\n", player.Name)
 
     for _, data in ipairs(transformationsData) do
         local masteryPercentage = (data.mastery / MAX_MASTERY) * 100
