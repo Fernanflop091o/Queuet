@@ -22,7 +22,7 @@ buttonL.BackgroundTransparency = 0.5
 buttonL.TextColor3 = Color3.new(0.6, 0, 0)
 buttonL.Font = Enum.Font.GothamBold
 buttonL.TextSize = 37
-buttonL.Text = "L"
+buttonL.Text = "H"
 buttonL.Style = Enum.ButtonStyle.RobloxRoundDropdownButton
 buttonL.Parent = screenGui
 
@@ -50,28 +50,44 @@ end)
 buttonL.MouseButton1Click:Connect(function()
     pcall(function()
         print("Botón L clickeado")
-        local screenGuiName = "PlayerCountGui"
+        local screenGuiName = "GameTimeGui"
+local existingGui = game.CoreGui:FindFirstChild(screenGuiName)
+
+if existingGui then
+    existingGui:Destroy()
+end
+
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = screenGuiName
 screenGui.Parent = game.CoreGui
 
-local playerCountLabel = Instance.new("TextLabel")
-playerCountLabel.Size = UDim2.new(1, 0, 0, 40)
-playerCountLabel.Position = UDim2.new(0, 0, 0, -46)
-playerCountLabel.BackgroundTransparency = 1
-playerCountLabel.TextColor3 = Color3.new(1, 1, 1)
-playerCountLabel.Font = Enum.Font.GothamBold
-playerCountLabel.TextScaled = true
-playerCountLabel.Text = "......"
-playerCountLabel.Parent = screenGui
+local timeLabel = Instance.new("TextLabel")
+timeLabel.Size = UDim2.new(0.144485582, 0, 0.093333334, 0)
+timeLabel.Position = UDim2.new(0.434485582, 0, -0.103333334, 0)
+timeLabel.BackgroundTransparency = 1
+timeLabel.TextColor3 = Color3.new(1, 1, 1)
+timeLabel.Font = Enum.Font.GothamBold
+timeLabel.TextScaled = true
+timeLabel.Text = "Carga ....." 
+timeLabel.Parent = screenGui
 
-local function updatePlayerCountLabel(label)
-    local playerCount = #game.Players:GetPlayers()
-    label.Text = "Players " .. playerCount
+local function updateTimeLabel(label)
+    local success, err = pcall(function()
+        local currentHour = math.floor(game.Lighting.ClockTime)
+        local currentMinute = math.floor((game.Lighting.ClockTime % 1) * 60)
+        local timeOfDay = (currentHour >= 6 and currentHour < 18) and "Day" or "Night"
+        label.Text = string.format("%s: %d:%02d", timeOfDay, currentHour, currentMinute)
+
+        if timeOfDay == "Day" then
+            label.TextColor3 = Color3.new(0, 0, 0)
+        else
+            label.TextColor3 = Color3.new(1, 1, 1)
+        end
+    end)
 end
 
 while wait(1) do
-    updatePlayerCountLabel(playerCountLabel)
+    updateTimeLabel(timeLabel)
 end
     end)
 end)
