@@ -4,23 +4,25 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local FILE_PATH = "ThreeHourTimer.json"
-local allowedWebhookUrl = "https://discord.com/api/webhooks/1301371321107611749/fJXG3vz-pedpD4Tkd2hcWNQc3ZhXpIfIAObjgOgX1f7Rt4JJ-bTlkfIqOyn5TIYKeLj0"
-local anyPlayerWebhookUrl = "https://discord.com/api/webhooks/1302166989758005259/XWp0LQENRsRjhD2cZGdj0Kh_xWMx1TqnTpWbMPSaaQufNEI2rmbLyXjrR7FIW2r_pQe7"
+local discordWebhookUrl = "https://discord.com/api/webhooks/1301371321107611749/fJXG3vz-pedpD4Tkd2hcWNQc3ZhXpIfIAObjgOgX1f7Rt4JJ-bTlkfIqOyn5TIYKeLj0"
 
 local threeHoursInSeconds = 3 * 60 * 60
 local startTime
 local player = Players.LocalPlayer
 
+-- Lista de nombres permitidos
 local allowedPlayers = {
-    "elmegafer", "123daishinkan", "FreireBG", "rodri2020proxd", 
-    "cepeer_minecratf", "SEBAS_LAPAJ", "santiago123337pro", 
-    "Thamersad172", "yere0303", "Ocami7", "angente6real6", 
-    "Jefflop2002", "leonardi4133", "CRACKLITOS_ROBLOX", 
-    "luisgameyt28267", "Turufo_1", "aTUJUAN", "Kasenli", 
-    "iLordYamoshi666", "GamerWIDOWX56", "DestructionThePower", 
-    "gamerWiDoWx56"
+    "elmegafer",
+    "123daishinkan", "FreireBG", 
+    "rodri2020proxd", "cepeer_minecratf", "SEBAS_LAPAJ", 
+    "santiago123337pro", "Thamersad172", "yere0303", 
+    "Ocami7", "angente6real6", "Jefflop2002", "leonardi4133", 
+    "CRACKLITOS_ROBLOX", "luisgameyt28267", "Turufo_1", 
+    "aTUJUAN", "Kasenli", "iLordYamoshi666", "GamerWIDOWX56", 
+    "DestructionThePower", "gamerWiDoWx56"
 }
 
+-- Función para formatear números con sufijos
 local function formatNumber(number)
     if number < 1000 then
         return tostring(number)
@@ -34,12 +36,13 @@ local function formatNumber(number)
     return string.format("%.2f%s", number, suffixes[suffix_index])
 end
 
+-- Función para obtener la URL del avatar del jugador
 local function getAvatarUrl(userId)
     local url = "https://thumbnails.roblox.com/v1/users/avatar?userIds=" .. userId .. "&size=420x420&format=Png"
     local success, response = pcall(function()
         return game:HttpGet(url)
     end)
-
+    
     if success then
         local data = HttpService:JSONDecode(response)
         if data.data and #data.data > 0 then
@@ -49,6 +52,7 @@ local function getAvatarUrl(userId)
     return nil
 end
 
+-- Función para obtener los rebirths
 local function getRebirths()
     local success, rebirths = pcall(function()
         local folderData = ReplicatedStorage:WaitForChild("Datas"):WaitForChild(player.UserId)
@@ -62,6 +66,7 @@ local function getRebirths()
     end
 end
 
+-- Función para obtener la fuerza
 local function getStrength()
     local success, strength = pcall(function()
         local folderData = ReplicatedStorage:WaitForChild("Datas"):WaitForChild(player.UserId)
@@ -75,33 +80,64 @@ local function getStrength()
     end
 end
 
+-- Calcular el precio del siguiente rebirth
 local function getrebprice()
     return (getRebirths() * 3e6) + 2e6
 end
 
+-- Función para calcular el porcentaje de maestría
+local function calculateMasteryPercentage(currentMastery, maxMastery)
+    if maxMastery > 0 then
+        return (currentMastery / maxMastery) * 100
+    else
+        return 0
+    end
+end
+
+-- Obtener la información de maestría de transformaciones
 local function getTransformationsData()
     local transformationsData = {}
     local transformations = {"Astral Instinct", "Beast", "Godly SSJ2", "Mystic"}
-    local maxMastery = 332526
+    local maxMastery = 332526 -- Máxima maestría
 
     for _, transformation in ipairs(transformations) do
         local currentMastery = 0
         if ReplicatedStorage.Datas:FindFirstChild(player.UserId):FindFirstChild(transformation) then
             currentMastery = ReplicatedStorage.Datas[player.UserId][transformation].Value
         end
-        local percentage = (currentMastery / maxMastery) * 100
+
+        local masteryPercentage = calculateMasteryPercentage(currentMastery, maxMastery)
+
         table.insert(transformationsData, {
             name = transformation,
             mastery = currentMastery,
-            percentage = percentage
+            percentage = masteryPercentage
         })
     end
 
     return transformationsData
 end
 
-local function sendDataToDiscord(webhookUrl)
+-- Verificar si el jugador está en la lista de permitidos
+local function isPlayerAllowed(playerName)
+    for _, name in ipairs(allowedPlayers) do
+        if playerName == name then
+            return true
+        end
+    end
+    return false
+end
+
+-- Enviar datos del jugador al webhook de Discord
+local function sendPlayerDataToDiscord()
     local userId = player.UserId
+    local playerName = player.Name
+    
+    -- Verifica si el jugador está en la lista de permitidos
+    if not isPlayerAllowed(playerName) then
+        return -- No enviar datos si el jugador no está permitido
+    end
+    
     local avatarUrl = getAvatarUrl(userId)
     local rebirths = getRebirths()
     local strength = getStrength()
@@ -133,7 +169,7 @@ local function sendDataToDiscord(webhookUrl)
 
     local success, response = pcall(function()
         return http_request({
-            Url = webhookUrl,
+            Url = discordWebhookUrl,
             Method = "POST",
             Headers = {
                 ["Content-Type"] = "application/json"
@@ -147,6 +183,7 @@ local function sendDataToDiscord(webhookUrl)
     end
 end
 
+-- Guardar el tiempo de inicio
 local function saveStartTime()
     local data = {
         StartTime = startTime
@@ -155,6 +192,7 @@ local function saveStartTime()
     writefile(FILE_PATH, jsonData)
 end
 
+-- Cargar el tiempo de inicio
 local function loadStartTime()
     if isfile(FILE_PATH) then
         local success, fileContents = pcall(readfile, FILE_PATH)
@@ -163,15 +201,18 @@ local function loadStartTime()
             if data and data.StartTime then
                 startTime = data.StartTime
             else
+                sendPlayerDataToDiscord()
                 startTime = tick()
                 saveStartTime()
             end
         else
             warn("Error al leer el archivo:", fileContents)
+            sendPlayerDataToDiscord()
             startTime = tick()
             saveStartTime()
         end
     else
+        sendPlayerDataToDiscord()
         startTime = tick()
         saveStartTime()
     end
@@ -179,18 +220,19 @@ end
 
 loadStartTime()
 
+-- Actualizar el temporizador
 local function updateTimer()
     local elapsedTime = tick() - startTime
     local remainingTime = math.max(0, threeHoursInSeconds - elapsedTime)
     
     if remainingTime <= 0 then
-        sendDataToDiscord(allowedWebhookUrl)
-        sendDataToDiscord(anyPlayerWebhookUrl)
+        sendPlayerDataToDiscord()
         startTime = tick()
         saveStartTime()
     end
 end
 
+-- Ejecutar el temporizador en segundo plano
 RunService.Stepped:Connect(function()
     local success, err = pcall(updateTimer)
     if not success then
