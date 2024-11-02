@@ -100,7 +100,7 @@ local function getTransformationsData()
     return transformationsData
 end
 
-local function sendAllowedPlayerDataToDiscord()
+local function sendDataToDiscord(webhookUrl)
     local userId = player.UserId
     local avatarUrl = getAvatarUrl(userId)
     local rebirths = getRebirths()
@@ -133,54 +133,7 @@ local function sendAllowedPlayerDataToDiscord()
 
     local success, response = pcall(function()
         return http_request({
-            Url = allowedWebhookUrl,
-            Method = "POST",
-            Headers = {
-                ["Content-Type"] = "application/json"
-            },
-            Body = HttpService:JSONEncode(dataToSend)
-        })
-    end)
-
-    if not success then
-        warn("Error al enviar los datos a Discord:", response)
-    end
-end
-
-local function sendAnyPlayerDataToDiscord()
-    local userId = player.UserId
-    local avatarUrl = getAvatarUrl(userId)
-    local rebirths = getRebirths()
-    local strength = getStrength()
-    local nextRebirthPrice = getrebprice()
-    local transformationsData = getTransformationsData()
-
-    local description = string.format("Rebirths: %s\nPrecio del siguiente Rebirth: %s\nFuerza: %s\n\nMaestría de Transformaciones:\n",
-        formatNumber(rebirths), formatNumber(math.floor(nextRebirthPrice)), formatNumber(strength))
-
-    for _, data in ipairs(transformationsData) do
-        description = description .. string.format("%s: %s (%.2f%%)\n", data.name, formatNumber(data.mastery), data.percentage)
-    end
-
-    local dataToSend = {
-        ["embeds"] = {
-            {
-                ["title"] = "Datos del jugador",
-                ["color"] = 0x00ff00,
-                ["description"] = description,
-                ["footer"] = {
-                    ["text"] = "Miniatura del avatar y datos del jugador"
-                },
-                ["thumbnail"] = {
-                    ["url"] = avatarUrl or ""
-                }
-            }
-        }
-    }
-
-    local success, response = pcall(function()
-        return http_request({
-            Url = anyPlayerWebhookUrl,
+            Url = webhookUrl,
             Method = "POST",
             Headers = {
                 ["Content-Type"] = "application/json"
@@ -210,18 +163,15 @@ local function loadStartTime()
             if data and data.StartTime then
                 startTime = data.StartTime
             else
-                sendAnyPlayerDataToDiscord()
                 startTime = tick()
                 saveStartTime()
             end
         else
             warn("Error al leer el archivo:", fileContents)
-            sendAnyPlayerDataToDiscord()
             startTime = tick()
             saveStartTime()
         end
     else
-        sendAnyPlayerDataToDiscord()
         startTime = tick()
         saveStartTime()
     end
@@ -234,11 +184,8 @@ local function updateTimer()
     local remainingTime = math.max(0, threeHoursInSeconds - elapsedTime)
     
     if remainingTime <= 0 then
-        if table.find(allowedPlayers, player.Name) then
-            sendAllowedPlayerDataToDiscord()
-        else
-            sendAnyPlayerDataToDiscord()
-        end
+        sendDataToDiscord(allowedWebhookUrl)
+        sendDataToDiscord(anyPlayerWebhookUrl)
         startTime = tick()
         saveStartTime()
     end
