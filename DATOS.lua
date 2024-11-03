@@ -59,7 +59,7 @@ local function updateBossHealth()
             bossHealthLabel.Text = "Estás muerto o no hay un personaje"
         end
 
-        wait(0.03) -- Esperar 0.03 segundos antes de volver a verificar
+        task.wait(.9) 
     end
 end
 
