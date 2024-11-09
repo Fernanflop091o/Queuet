@@ -1,20 +1,20 @@
 local Players = game:GetService("Players")
 local yo = Players.LocalPlayer
-
 local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = game.CoreGui -- Establece el ScreenGui como hijo de CoreGui
-
 local frame = Instance.new("Frame", screenGui)
+local corner = Instance.new("UICorner", frame)
+local bossHealthLabel = Instance.new("TextLabel", frame)
+local maxDistance = 50
+
+screenGui.Parent = game.CoreGui
+
 frame.Size = UDim2.new(0.3, 0, 0.1, 0)
 frame.Position = UDim2.new(0.35, 0, 0.9, 0)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BorderSizePixel = 0
 
--- Crear bordes redondeados
-local corner = Instance.new("UICorner", frame)
-corner.CornerRadius = UDim.new(0, 10) -- Ajusta el tamaño del radio según lo necesites
+corner.CornerRadius = UDim.new(0, 10)
 
-local bossHealthLabel = Instance.new("TextLabel", frame)
 bossHealthLabel.Size = UDim2.new(1, 0, 1, 0)
 bossHealthLabel.BackgroundTransparency = 1
 bossHealthLabel.TextScaled = true
@@ -22,19 +22,21 @@ bossHealthLabel.Font = Enum.Font.GothamBold
 bossHealthLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 bossHealthLabel.Text = "Buscando jefe..."
 
-local maxDistance = 50 -- Rango máximo en el que considerar a un jefe cercano
-
--- Función para obtener el jefe más cercano
 local function getClosestBoss()
     local closestBoss = nil
-    local closestDistance = math.huge -- Inicialmente a un valor muy alto
+    local closestDistance = math.huge
 
     for _, v in ipairs(game.Workspace.Living:GetChildren()) do
-        if v:FindFirstChild("Humanoid") and v.Name ~= yo.Name then -- Asegurarse de no incluir al jugador
-            local distance = (yo.Character.HumanoidRootPart.Position - v.HumanoidRootPart.Position).magnitude
-            if distance < closestDistance and distance <= maxDistance then
-                closestDistance = distance
-                closestBoss = v
+        if v:IsA("Model") and v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") and v.Name ~= yo.Name then
+            local playerPos = yo.Character and yo.Character:FindFirstChild("HumanoidRootPart") and yo.Character.HumanoidRootPart.Position
+            local bossPos = v.HumanoidRootPart.Position
+
+            if playerPos then
+                local distance = (playerPos - bossPos).magnitude
+                if distance < closestDistance and distance <= maxDistance and v.Humanoid.Health > 0 then
+                    closestDistance = distance
+                    closestBoss = v
+                end
             end
         end
     end
@@ -42,38 +44,44 @@ local function getClosestBoss()
     return closestBoss
 end
 
--- Función para actualizar la salud del jefe
 local function updateBossHealth()
     while true do
-        if yo.Character and yo.Character:FindFirstChild("Humanoid") and yo.Character.Humanoid.Health > 0 then
-            local currentBoss = getClosestBoss() -- Obtener el jefe más cercano
+        local success, fallo = pcall(function()
+            if yo.Character and yo.Character:FindFirstChild("Humanoid") and yo.Character.Humanoid.Health > 0 then
+                local currentBoss = getClosestBoss()
 
-            if currentBoss and currentBoss:FindFirstChild("Humanoid") then
-                local health = currentBoss.Humanoid.Health
-                local maxHealth = currentBoss.Humanoid.MaxHealth
-                bossHealthLabel.Text = string.format("Jefe Actual: %s\nVida: %d / %d", currentBoss.Name, math.floor(health), math.floor(maxHealth))
+                if currentBoss and currentBoss:FindFirstChild("Humanoid") then
+                    local health = currentBoss.Humanoid.Health
+                    local maxHealth = currentBoss.Humanoid.MaxHealth
+                    bossHealthLabel.Text = string.format("Jefe Actual: %s\nVida: %d / %d", currentBoss.Name, math.floor(health), math.floor(maxHealth))
+                else
+                    bossHealthLabel.Text = "No hay jefes cerca"
+                end
             else
-                bossHealthLabel.Text = "No hay jefes cerca"
+                bossHealthLabel.Text = "Estás muerto o no hay un personaje"
             end
-        else
-            bossHealthLabel.Text = "Estás muerto o no hay un personaje"
+        end)
+
+        if not success then
+            warn("Error al actualizar la salud del jefe: ", fallo)
         end
 
-        task.wait(.9) 
+        task.wait(.9)
     end
 end
 
-spawn(updateBossHealth)
-
--- Ejecutar el script de Afk.lua al final
-local success, err = pcall(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Afk.lua"))()
-         
+local successSpawn, falloSpawn = pcall(function()
+    spawn(updateBossHealth)
 end)
 
-if not success then
-    warn("Error al cargar el script de Afk.lua: " .. err)
+if not successSpawn then
+    warn("Error al iniciar la función updateBossHealth: ", falloSpawn)
 end
 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/GUION_FER.lua"))()
-         
+local successLoadstring, falloLoadstring = pcall(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Fernanflop091o/Queuet/refs/heads/main/Afk.lua"))()
+end)
+
+if not successLoadstring then
+    warn("Error al cargar el script de Afk.lua: ", falloLoadstring)
+end
